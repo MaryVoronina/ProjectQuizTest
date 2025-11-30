@@ -26,6 +26,7 @@ namespace ProjectQuizTest {
 			correctCount = 0;
 
 			open_file();
+			shuffle();
 			// load_info();
 		}
 
@@ -56,11 +57,13 @@ namespace ProjectQuizTest {
 		/// </summary>
 		System::ComponentModel::Container^ components;
 
-		System::Collections::Generic::List<String^>^ questions;
-		System::Collections::Generic::List<System::Collections::Generic::List<String^>^>^ answers;
-		System::Collections::Generic::List<System::Collections::Generic::List<String^>^>^ correctAnswers;
-		System::Collections::Generic::List<bool>^ isMultipleChoice;
+		array<String^>^ questions;
+		array<array<String^>^>^ answers;
+		array<array<String^>^>^ correctAnswers;
+		array<bool>^ isMultipleChoice;
 		int currentQuestion;
+		int count_q;
+		int number_img;
 		String^ userName;
 	private: System::Windows::Forms::CheckBox^ checkBox5;
 	private: System::Windows::Forms::Label^ label2;
@@ -71,6 +74,7 @@ namespace ProjectQuizTest {
 
 	private: System::Windows::Forms::TextBox^ textBox1;
 	private: System::Windows::Forms::Button^ button1;
+	private: System::Windows::Forms::CheckBox^ checkBox6;
 		   int correctCount;
 
 #pragma region Windows Form Designer generated code
@@ -94,6 +98,7 @@ namespace ProjectQuizTest {
 			   this->label_write_name = (gcnew System::Windows::Forms::Label());
 			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			   this->button1 = (gcnew System::Windows::Forms::Button());
+			   this->checkBox6 = (gcnew System::Windows::Forms::CheckBox());
 			   this->flowLayoutPanel1->SuspendLayout();
 			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			   this->start_panel->SuspendLayout();
@@ -118,7 +123,7 @@ namespace ProjectQuizTest {
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox5);
 			   this->flowLayoutPanel1->Location = System::Drawing::Point(384, 165);
 			   this->flowLayoutPanel1->Name = L"flowLayoutPanel1";
-			   this->flowLayoutPanel1->Size = System::Drawing::Size(193, 442);
+			   this->flowLayoutPanel1->Size = System::Drawing::Size(228, 442);
 			   this->flowLayoutPanel1->TabIndex = 1;
 			   this->flowLayoutPanel1->Visible = false;
 			   // 
@@ -211,6 +216,7 @@ namespace ProjectQuizTest {
 			   this->start_panel->Controls->Add(this->label_write_name);
 			   this->start_panel->Controls->Add(this->textBox1);
 			   this->start_panel->Controls->Add(this->button1);
+			   this->start_panel->Controls->Add(this->checkBox6);
 			   this->start_panel->Location = System::Drawing::Point(554, 294);
 			   this->start_panel->Name = L"start_panel";
 			   this->start_panel->Size = System::Drawing::Size(832, 439);
@@ -245,6 +251,16 @@ namespace ProjectQuizTest {
 			   this->button1->UseVisualStyleBackColor = false;
 			   this->button1->Click += gcnew System::EventHandler(this, &quiz::button1_Click);
 			   // 
+			   // checkBox6
+			   // 
+			   this->checkBox6->AutoSize = true;
+			   this->checkBox6->Location = System::Drawing::Point(185, 35);
+			   this->checkBox6->Name = L"checkBox6";
+			   this->checkBox6->Size = System::Drawing::Size(113, 24);
+			   this->checkBox6->TabIndex = 3;
+			   this->checkBox6->Text = L"checkBox6";
+			   this->checkBox6->UseVisualStyleBackColor = true;
+			   // 
 			   // quiz
 			   // 
 			   this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
@@ -268,13 +284,14 @@ namespace ProjectQuizTest {
 
 		   }
 #pragma endregion
-	private: int get_num_marks() 
+	private: int get_num_marks()
 	{
 		int count = 0;
 		array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
 		for (int i = 0; i < checkBoxes->Length; i++)
 		{
-			if (checkBoxes[i]->Visible && checkBoxes[i]->Checked) {
+			if (checkBoxes[i]->Visible && checkBoxes[i]->Checked)
+			{
 				count++;
 			}
 		}
@@ -289,41 +306,60 @@ namespace ProjectQuizTest {
 			return;
 		}
 
-		System::Collections::Generic::List<String^>^ selected = gcnew System::Collections::Generic::List<String^>();
+		// кількість відмічених
+		int selectedCount = 0;
+		if (checkBox1->Visible && checkBox1->Checked) selectedCount++;
+		if (checkBox2->Visible && checkBox2->Checked) selectedCount++;
+		if (checkBox3->Visible && checkBox3->Checked) selectedCount++;
+		if (checkBox4->Visible && checkBox4->Checked) selectedCount++;
+		if (checkBox5->Visible && checkBox5->Checked) selectedCount++;
+
+		// масив потрібного розміру
+		array<String^>^ selected = gcnew array<String^>(selectedCount);
+		int selectedIndex = 0;
 
 		if (checkBox1->Visible && checkBox1->Checked)
 		{
-			selected->Add("A");
+			selected[selectedIndex++] = "A";
 		}
 		if (checkBox2->Visible && checkBox2->Checked)
 		{
-			selected->Add("B");
+			selected[selectedIndex++] = "B";
 		}
 		if (checkBox3->Visible && checkBox3->Checked)
 		{
-			selected->Add("C");
+			selected[selectedIndex++] = "C";
 		}
 		if (checkBox4->Visible && checkBox4->Checked)
 		{
-			selected->Add("D");
+			selected[selectedIndex++] = "D";
 		}
 		if (checkBox5->Visible && checkBox5->Checked)
 		{
-			selected->Add("E");
+			selected[selectedIndex++] = "E";
 		}
 
 		bool isCorrect = true;
 
-		for (int i = 0; i < selected->Count; i++)
+		for (int i = 0; i < selected->Length; i++)
 		{
-			if (!correctAnswers[currentQuestion]->Contains(selected[i]))
+			bool found = false;
+			for (int j = 0; j < correctAnswers[currentQuestion]->Length; j++)
+			{
+				if (correctAnswers[currentQuestion][j] == selected[i])
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
 			{
 				isCorrect = false;
 				break;
 			}
 		}
 
-		if (isCorrect && selected->Count != correctAnswers[currentQuestion]->Count)
+		if (isCorrect && selected->Length != correctAnswers[currentQuestion]->Length)
 		{
 			isCorrect = false;
 		}
@@ -334,12 +370,23 @@ namespace ProjectQuizTest {
 		}
 
 		currentQuestion++;
-		if (currentQuestion < questions->Count) {
+		if (currentQuestion < questions->Length)
+		{
+			if (checkBox6->Checked && isCorrect)
+			{
+				String^ result = String::Format("Відповідь правильна!");
+				MessageBox::Show(result, "Результат питання:", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			}
+			else if (checkBox6->Checked && !isCorrect)
+			{
+				String^ result = String::Format("Відповідь неправильна! Правильна відповідь: {0}", questions[currentQuestion - 1]);
+				MessageBox::Show(result, "Результат питання:", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			}
 			load_info();
 		}
 		else
 		{
-			String^ result = String::Format("Правильних відповідей: {0}", correctCount, questions->Count);
+			String^ result = String::Format("Правильних відповідей: {0}", correctCount, questions->Length);
 			MessageBox::Show(result, "Результат тесту", MessageBoxButtons::OK, MessageBoxIcon::Information);
 			save_result(); // Зберігаємо результат
 			Application::Exit();
@@ -350,16 +397,21 @@ namespace ProjectQuizTest {
 		   {
 			   array<String^>^ lines = System::IO::File::ReadAllLines("quiz_questions.txt", System::Text::Encoding::UTF8);
 
-			   questions = gcnew System::Collections::Generic::List<String^>();
-			   answers = gcnew System::Collections::Generic::List<System::Collections::Generic::List<String^>^>();
-			   correctAnswers = gcnew System::Collections::Generic::List<System::Collections::Generic::List<String^>^>();
-			   isMultipleChoice = gcnew System::Collections::Generic::List<bool>();
+			   array<String^>^ elements = lines[0]->Split(' '); // elements = ["6", "6"]
+			   count_q = Int32::Parse(elements[0]);
+			   number_img = Int32::Parse(elements[1]) - 1;
 
-			   System::Collections::Generic::List<String^>^ options = gcnew System::Collections::Generic::List<String^>();
 
-			   System::Collections::Generic::List<String^>^ correct = gcnew System::Collections::Generic::List<String^>();
+			   questions = gcnew array<String^>(count_q);
+			   answers = gcnew array<array<String^>^>(count_q);
+			   correctAnswers = gcnew array<array<String^>^>(count_q);
+			   isMultipleChoice = gcnew array<bool>(count_q);
 
-			   for (int i = 0; i < lines->Length; i++)
+			   int questionIndex = -1;
+			   array<String^>^ tempOptions = gcnew array<String^>(5);
+			   int optionCount = 0;
+
+			   for (int i = 2; i < lines->Length; i++)
 			   {
 				   if (String::IsNullOrEmpty(lines[i]))
 					   continue;
@@ -367,32 +419,53 @@ namespace ProjectQuizTest {
 				   char first_char = lines[i][0];
 				   if (first_char >= '0' && first_char <= '9')
 				   {
-					   questions->Add(lines[i]);
+					   questionIndex++;
+					   questions[questionIndex] = lines[i];
+					   optionCount = 0;
 				   }
 				   else if (first_char >= 'A' && first_char <= 'E' && lines[i][1] == '.')
 				   {
-					   options->Add(lines[i]);
+					   tempOptions[optionCount] = lines[i];
+					   optionCount++;
 				   }
 				   else if (lines[i]->StartsWith("Correct"))
 				   {
-					   answers->Add(options);
+					   // зберегти
+					   array<String^>^ finalOptions = gcnew array<String^>(optionCount);
+					   for (int j = 0; j < optionCount; j++)
+					   {
+						   finalOptions[j] = tempOptions[j];
+					   }
+					   answers[questionIndex] = finalOptions;
 
+					   // обробити правильні
 					   String^ correctStr = lines[i]->Substring(9)->Trim();
 					   array<String^>^ correctLetters = correctStr->Split(' ');
 
-					   for each(String ^ letter in correctLetters)
+					   // підрахувати кількість
+					   int correctCount = 0;
+					   for each (String ^ letter in correctLetters)
 					   {
 						   if (!String::IsNullOrEmpty(letter->Trim()))
 						   {
-							   correct->Add(letter->Trim());
+							   correctCount++;
 						   }
 					   }
 
-					   correctAnswers->Add(correct);
-					   isMultipleChoice->Add(correct->Count > 1);
+					   // створення масиву правильних відповідей
+					   array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
+					   int correctIndex = 0;
+					   for each (String ^ letter in correctLetters)
+					   {
+						   if (!String::IsNullOrEmpty(letter->Trim()))
+						   {
+							   finalCorrect[correctIndex] = letter->Trim();
+							   correctIndex++;
+						   }
+					   }
 
-					   options = gcnew System::Collections::Generic::List<String^>();
-					   correct = gcnew System::Collections::Generic::List<String^>();
+					   correctAnswers[questionIndex] = finalCorrect;
+					   isMultipleChoice[questionIndex] = (correctCount > 1);
 				   }
 			   }
 		   }
@@ -400,8 +473,8 @@ namespace ProjectQuizTest {
 		   {
 			   label1->Text = questions[currentQuestion];
 
-			   System::Collections::Generic::List<String^>^ currentAnswers = answers[currentQuestion];
-			   int count = currentAnswers->Count;
+			   array<String^>^ currentAnswers = answers[currentQuestion];
+			   int count = currentAnswers->Length;
 			   array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
 			   for (int i = 0; i < checkBoxes->Length; i++)
 			   {
@@ -427,12 +500,12 @@ namespace ProjectQuizTest {
 			   }
 
 			   // currentQuestion = 5
-			   if (currentQuestion == 5) 
+			   if (currentQuestion == number_img)
 			   {
-				   pictureBox1->Load("Image20251120181827.jpg");
+				   pictureBox1->Load("Image20251130161027.jpg");
 				   pictureBox1->Visible = true;
 			   }
-			   else 
+			   else
 			   {
 				   pictureBox1->Visible = false;
 			   }
@@ -453,50 +526,49 @@ namespace ProjectQuizTest {
 	private: void check(System::Object^ sender)
 	{
 		CheckBox^ currentCheckBox = safe_cast<CheckBox^>(sender);
-		if (isMultipleChoice[currentQuestion] || !currentCheckBox->Checked) 
+		if (isMultipleChoice[currentQuestion] || !currentCheckBox->Checked)
 		{
 			return;
 		}
 		int count = get_num_marks();
-		if (count == 1) 
+		if (count == 1)
 		{
 			return;
 		}
-		else 
+		else
 		{
 			currentCheckBox->Checked = false;
 			MessageBox::Show("Можна вибрати лише одну відповідь!", "Увага");
 		}
 	}
 
-	private: System::Void checkBox1_CheckedChanged(System::Object^ sender, System::EventArgs^ e) 
+	private: System::Void checkBox1_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
 	{
 		check(sender);
 	}
-	private: System::Void checkBox2_CheckedChanged(System::Object^ sender, System::EventArgs^ e) 
+	private: System::Void checkBox2_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
 	{
 		check(sender);
 	}
-	private: System::Void checkBox3_CheckedChanged(System::Object^ sender, System::EventArgs^ e) 
+	private: System::Void checkBox3_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
 	{
 		check(sender);
 	}
-	private: System::Void checkBox4_CheckedChanged(System::Object^ sender, System::EventArgs^ e) 
+	private: System::Void checkBox4_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
 	{
 		check(sender);
 	}
-	private: System::Void checkBox5_CheckedChanged(System::Object^ sender, System::EventArgs^ e) 
+	private: System::Void checkBox5_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
 	{
 		check(sender);
 	}
 
 		   void save_result() {
-			   System::IO::StreamWriter^ writer = gcnew System::IO::StreamWriter(
-				   "results.txt", true, System::Text::Encoding::UTF8);
+			   System::IO::StreamWriter^ writer = gcnew System::IO::StreamWriter("results.txt", true, System::Text::Encoding::UTF8);
 
 			   String^ timestamp = System::DateTime::Now.ToString("dd.MM.yyyy HH:mm:ss");
 			   String^ result = String::Format("{0} - {1}: {2}/{3}",
-				   timestamp, userName, correctCount, questions->Count);
+				   timestamp, userName, correctCount, questions->Length);
 
 			   writer->WriteLine(result);
 			   writer->Close();
@@ -504,5 +576,53 @@ namespace ProjectQuizTest {
 
 	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) {
 	}
-};
+
+
+		   void shuffle() {
+			   System::Random^ rnd = gcnew System::Random();
+			   for (int i = 0; i <= 20; i++)
+			   {
+				   //    i1    i2
+				   // q0 q3 q2 q1 q4 q5
+				   // a0 a1 a2 a3 a4 a5
+
+
+				   int ind1, ind2;
+				   ind1 = rnd->Next(0, 6);
+				   ind2 = rnd->Next(0, 6);
+
+				   if (number_img == ind1) {
+					   number_img = ind2;
+				   }
+				   else if (number_img == ind2) {
+					   number_img = ind1;
+				   }
+
+				   // swap(questions[ind1], questions[ind2]); !!!
+				   String^ line = questions[ind1];
+				   questions[ind1] = questions[ind2];
+				   questions[ind2] = line;
+
+				   auto tmp1 = answers[ind1];
+				   answers[ind1] = answers[ind2];
+				   answers[ind2] = tmp1;
+
+				   auto tmp2 = correctAnswers[ind1];
+				   correctAnswers[ind1] = correctAnswers[ind2];
+				   correctAnswers[ind2] = tmp2;
+
+				   bool tmp3 = isMultipleChoice[ind1];
+				   isMultipleChoice[ind1] = isMultipleChoice[ind2];
+				   isMultipleChoice[ind2] = tmp3;
+
+				   // Поміняти місцями відповіді одного питання
+
+
+			   }
+
+
+		   }
+
+
+	};
 }
