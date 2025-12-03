@@ -314,7 +314,6 @@ namespace ProjectQuizTest {
 		if (checkBox4->Visible && checkBox4->Checked) selectedCount++;
 		if (checkBox5->Visible && checkBox5->Checked) selectedCount++;
 
-		// масив потрібного розміру
 		array<String^>^ selected = gcnew array<String^>(selectedCount);
 		int selectedIndex = 0;
 
@@ -388,7 +387,7 @@ namespace ProjectQuizTest {
 		{
 			String^ result = String::Format("Правильних відповідей: {0}", correctCount, questions->Length);
 			MessageBox::Show(result, "Результат тесту", MessageBoxButtons::OK, MessageBoxIcon::Information);
-			save_result(); // Зберігаємо результат
+			save_result(); 
 			Application::Exit();
 		}
 	}
@@ -397,7 +396,7 @@ namespace ProjectQuizTest {
 		   {
 			   array<String^>^ lines = System::IO::File::ReadAllLines("quiz_questions.txt", System::Text::Encoding::UTF8);
 
-			   array<String^>^ elements = lines[0]->Split(' '); // elements = ["6", "6"]
+			   array<String^>^ elements = lines[0]->Split(' ');
 			   count_q = Int32::Parse(elements[0]);
 			   number_img = Int32::Parse(elements[1]) - 1;
 
@@ -430,7 +429,6 @@ namespace ProjectQuizTest {
 				   }
 				   else if (lines[i]->StartsWith("Correct"))
 				   {
-					   // зберегти
 					   array<String^>^ finalOptions = gcnew array<String^>(optionCount);
 					   for (int j = 0; j < optionCount; j++)
 					   {
@@ -438,11 +436,9 @@ namespace ProjectQuizTest {
 					   }
 					   answers[questionIndex] = finalOptions;
 
-					   // обробити правильні
 					   String^ correctStr = lines[i]->Substring(9)->Trim();
 					   array<String^>^ correctLetters = correctStr->Split(' ');
 
-					   // підрахувати кількість
 					   int correctCount = 0;
 					   for each (String ^ letter in correctLetters)
 					   {
@@ -451,8 +447,6 @@ namespace ProjectQuizTest {
 							   correctCount++;
 						   }
 					   }
-
-					   // створення масиву правильних відповідей
 					   array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
 					   int correctIndex = 0;
 					   for each (String ^ letter in correctLetters)
@@ -472,8 +466,7 @@ namespace ProjectQuizTest {
 		   void load_info()
 		   {
 			   label1->Text = questions[currentQuestion];
-
-			   array<String^>^ currentAnswers = answers[currentQuestion];
+				array<String^>^ currentAnswers = answers[currentQuestion];
 			   int count = currentAnswers->Length;
 			   array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
 			   for (int i = 0; i < checkBoxes->Length; i++)
@@ -499,7 +492,6 @@ namespace ProjectQuizTest {
 				   label2->Text = L"Оберіть тільки одну відповідь";
 			   }
 
-			   // currentQuestion = 5
 			   if (currentQuestion == number_img)
 			   {
 				   pictureBox1->Load("Image20251130161027.jpg");
@@ -563,18 +555,19 @@ namespace ProjectQuizTest {
 		check(sender);
 	}
 
-		   void save_result() {
+		   void save_result() 
+		   {
 			   System::IO::StreamWriter^ writer = gcnew System::IO::StreamWriter("results.txt", true, System::Text::Encoding::UTF8);
 
 			   String^ timestamp = System::DateTime::Now.ToString("dd.MM.yyyy HH:mm:ss");
-			   String^ result = String::Format("{0} - {1}: {2}/{3}",
-				   timestamp, userName, correctCount, questions->Length);
+			   String^ result = String::Format("{0} - {1}: {2}/{3}", timestamp, userName, correctCount, questions->Length);
 
 			   writer->WriteLine(result);
 			   writer->Close();
 		   }
 
-	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) {
+	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
 	}
 
 
@@ -582,23 +575,20 @@ namespace ProjectQuizTest {
 			   System::Random^ rnd = gcnew System::Random();
 			   for (int i = 0; i <= 20; i++)
 			   {
-				   //    i1    i2
-				   // q0 q3 q2 q1 q4 q5
-				   // a0 a1 a2 a3 a4 a5
-
-
 				   int ind1, ind2;
 				   ind1 = rnd->Next(0, 6);
 				   ind2 = rnd->Next(0, 6);
 
-				   if (number_img == ind1) {
+				   if (number_img == ind1) 
+				   {
 					   number_img = ind2;
 				   }
-				   else if (number_img == ind2) {
+				   else if (number_img == ind2) 
+				   {
 					   number_img = ind1;
 				   }
 
-				   // swap(questions[ind1], questions[ind2]); !!!
+				   //swap(questions[ind1], questions[ind2]); !!!
 				   String^ line = questions[ind1];
 				   questions[ind1] = questions[ind2];
 				   questions[ind2] = line;
@@ -615,7 +605,6 @@ namespace ProjectQuizTest {
 				   isMultipleChoice[ind1] = isMultipleChoice[ind2];
 				   isMultipleChoice[ind2] = tmp3;
 
-				   // Поміняти місцями відповіді одного питання
 
 
 			   }
