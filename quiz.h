@@ -340,22 +340,23 @@ namespace ProjectQuizTest {
 
 		bool isCorrect = true;
 
-		for (int i = 0; i < selected->Length; i++)
+		for (int i = 0; i < selected->Length && isCorrect; i++)
 		{
 			bool found = false;
-			for (int j = 0; j < correctAnswers[currentQuestion]->Length; j++)
+			for (int j = 0; j < correctAnswers[currentQuestion]->Length && !found; j++)
 			{
 				if (correctAnswers[currentQuestion][j] == selected[i])
 				{
 					found = true;
-					break;
+					//break;
 				}
 			}
 			if (!found)
 			{
 				isCorrect = false;
-				break;
+				// break;
 			}
+		}
 		}
 
 		if (isCorrect && selected->Length != correctAnswers[currentQuestion]->Length)
@@ -440,23 +441,23 @@ namespace ProjectQuizTest {
 					   array<String^>^ correctLetters = correctStr->Split(' ');
 
 					   int correctCount = 0;
-					   for each (String ^ letter in correctLetters)
-					   {
-						   if (!String::IsNullOrEmpty(letter->Trim()))
-						   {
-							   correctCount++;
-						   }
-					   }
-					   array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
-					   int correctIndex = 0;
-					   for each (String ^ letter in correctLetters)
-					   {
-						   if (!String::IsNullOrEmpty(letter->Trim()))
-						   {
-							   finalCorrect[correctIndex] = letter->Trim();
-							   correctIndex++;
-						   }
-					   }
+							  for (int i = 0; i < correctLetters->Length; i++)
+							 {
+									   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
+									   {
+													   correctCount++;
+									   }
+							 }
+							 array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
+							 int correctIndex = 0;
+							 for (int i = 0; i < correctLetters->Length; i++)
+							 {
+									   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
+									   {
+													   finalCorrect[correctIndex] = correctLetters[i]->Trim();
+													   correctIndex++;
+									   }
+							 }
 
 					   correctAnswers[questionIndex] = finalCorrect;
 					   isMultipleChoice[questionIndex] = (correctCount > 1);
