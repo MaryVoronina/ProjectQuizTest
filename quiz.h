@@ -26,6 +26,11 @@ namespace ProjectQuizTest {
 			correctCount = 0;
 
 			open_file();
+			userAnswers = gcnew array<array<String^>^>(count_q);
+			for (int i = 0; i < count_q; i++) {
+				userAnswers[i] = gcnew array<String^>(count_q);
+			}
+
 			shuffle();
 			// load_info();
 		}
@@ -49,17 +54,19 @@ namespace ProjectQuizTest {
 	private: System::Windows::Forms::CheckBox^ checkBox2;
 	private: System::Windows::Forms::CheckBox^ checkBox3;
 	private: System::Windows::Forms::CheckBox^ checkBox4;
+	private: System::ComponentModel::IContainer^ components;
 
 
 	private:
 		/// <summary>
 		/// Обязательная переменная конструктора.
 		/// </summary>
-		System::ComponentModel::Container^ components;
+
 
 		array<String^>^ questions;
 		array<array<String^>^>^ answers;
 		array<array<String^>^>^ correctAnswers;
+		array<array<String^>^>^ userAnswers;
 		array<bool>^ isMultipleChoice;
 		int currentQuestion;
 		int count_q;
@@ -75,6 +82,13 @@ namespace ProjectQuizTest {
 	private: System::Windows::Forms::TextBox^ textBox1;
 	private: System::Windows::Forms::Button^ button1;
 	private: System::Windows::Forms::CheckBox^ checkBox6;
+	private: System::Windows::Forms::Button^ button_back;
+	private: System::Windows::Forms::Timer^ timer1;
+	private: System::Windows::Forms::Label^ label_timer;
+
+
+
+
 		   int correctCount;
 
 #pragma region Windows Form Designer generated code
@@ -84,6 +98,7 @@ namespace ProjectQuizTest {
 		   /// </summary>
 		   void InitializeComponent(void)
 		   {
+			   this->components = (gcnew System::ComponentModel::Container());
 			   this->label1 = (gcnew System::Windows::Forms::Label());
 			   this->flowLayoutPanel1 = (gcnew System::Windows::Forms::FlowLayoutPanel());
 			   this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
@@ -99,6 +114,9 @@ namespace ProjectQuizTest {
 			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			   this->button1 = (gcnew System::Windows::Forms::Button());
 			   this->checkBox6 = (gcnew System::Windows::Forms::CheckBox());
+			   this->button_back = (gcnew System::Windows::Forms::Button());
+			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			   this->label_timer = (gcnew System::Windows::Forms::Label());
 			   this->flowLayoutPanel1->SuspendLayout();
 			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			   this->start_panel->SuspendLayout();
@@ -256,16 +274,43 @@ namespace ProjectQuizTest {
 			   this->checkBox6->AutoSize = true;
 			   this->checkBox6->Location = System::Drawing::Point(185, 35);
 			   this->checkBox6->Name = L"checkBox6";
-			   this->checkBox6->Size = System::Drawing::Size(113, 24);
+			   this->checkBox6->Size = System::Drawing::Size(264, 24);
 			   this->checkBox6->TabIndex = 3;
-			   this->checkBox6->Text = L"checkBox6";
+			   this->checkBox6->Text = L"Показувати результат одразу";
 			   this->checkBox6->UseVisualStyleBackColor = true;
+			   // 
+			   // button_back
+			   // 
+			   this->button_back->Location = System::Drawing::Point(201, 665);
+			   this->button_back->Name = L"button_back";
+			   this->button_back->Size = System::Drawing::Size(139, 66);
+			   this->button_back->TabIndex = 6;
+			   this->button_back->Text = L"Back";
+			   this->button_back->UseVisualStyleBackColor = true;
+			   this->button_back->Visible = false;
+			   this->button_back->Click += gcnew System::EventHandler(this, &quiz::button_back_Click);
+			   // 
+			   // timer1
+			   // 
+			   this->timer1->Interval = 1000;
+			   this->timer1->Tick += gcnew System::EventHandler(this, &quiz::timer1_Tick);
+			   // 
+			   // label_timer
+			   // 
+			   this->label_timer->AutoSize = true;
+			   this->label_timer->Location = System::Drawing::Point(523, 49);
+			   this->label_timer->Name = L"label_timer";
+			   this->label_timer->Size = System::Drawing::Size(86, 20);
+			   this->label_timer->TabIndex = 7;
+			   this->label_timer->Text = L"label_timer";
 			   // 
 			   // quiz
 			   // 
 			   this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
 			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			   this->ClientSize = System::Drawing::Size(1712, 860);
+			   this->Controls->Add(this->label_timer);
+			   this->Controls->Add(this->button_back);
 			   this->Controls->Add(this->start_panel);
 			   this->Controls->Add(this->pictureBox1);
 			   this->Controls->Add(this->label2);
@@ -306,6 +351,7 @@ namespace ProjectQuizTest {
 			return;
 		}
 
+		
 		// кількість відмічених
 		int selectedCount = 0;
 		if (checkBox1->Visible && checkBox1->Checked) selectedCount++;
@@ -337,6 +383,7 @@ namespace ProjectQuizTest {
 		{
 			selected[selectedIndex++] = "E";
 		}
+		userAnswers[currentQuestion] = selected; // !!!
 
 		bool isCorrect = true;
 
@@ -348,15 +395,13 @@ namespace ProjectQuizTest {
 				if (correctAnswers[currentQuestion][j] == selected[i])
 				{
 					found = true;
-					//break;
 				}
 			}
 			if (!found)
 			{
 				isCorrect = false;
-				// break;
+
 			}
-		}
 		}
 
 		if (isCorrect && selected->Length != correctAnswers[currentQuestion]->Length)
@@ -441,23 +486,24 @@ namespace ProjectQuizTest {
 					   array<String^>^ correctLetters = correctStr->Split(' ');
 
 					   int correctCount = 0;
-							  for (int i = 0; i < correctLetters->Length; i++)
-							 {
-									   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
-									   {
-													   correctCount++;
-									   }
-							 }
-							 array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
-							 int correctIndex = 0;
-							 for (int i = 0; i < correctLetters->Length; i++)
-							 {
-									   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
-									   {
-													   finalCorrect[correctIndex] = correctLetters[i]->Trim();
-													   correctIndex++;
-									   }
-							 }
+					   
+					   for (int i = 0; i < correctLetters->Length; i++)
+					   {
+						   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
+						   {
+							   correctCount++;
+						   }
+					   }
+					   array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
+					   int correctIndex = 0;
+					   for (int i = 0; i < correctLetters->Length; i++)
+					   {
+						   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
+						   {
+							   finalCorrect[correctIndex] = correctLetters[i]->Trim();
+							   correctIndex++;
+						   }
+					   }
 
 					   correctAnswers[questionIndex] = finalCorrect;
 					   isMultipleChoice[questionIndex] = (correctCount > 1);
@@ -466,8 +512,9 @@ namespace ProjectQuizTest {
 		   }
 		   void load_info()
 		   {
-			   label1->Text = questions[currentQuestion];
-				array<String^>^ currentAnswers = answers[currentQuestion];
+			   // label1->Text = questions[currentQuestion];
+			   label1->Text = String::Format("{0}. {1}", currentQuestion + 1, questions[currentQuestion]);
+			   array<String^>^ currentAnswers = answers[currentQuestion];
 			   int count = currentAnswers->Length;
 			   array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
 			   for (int i = 0; i < checkBoxes->Length; i++)
@@ -513,6 +560,9 @@ namespace ProjectQuizTest {
 		label1->Visible = true;
 		label2->Visible = true;
 		button_next->Visible = true;
+		button_back->Visible = true;
+		timer1->Start();
+		// start time
 		load_info();
 	}
 
@@ -589,7 +639,6 @@ namespace ProjectQuizTest {
 					   number_img = ind1;
 				   }
 
-				   //swap(questions[ind1], questions[ind2]); !!!
 				   String^ line = questions[ind1];
 				   questions[ind1] = questions[ind2];
 				   questions[ind2] = line;
@@ -614,5 +663,30 @@ namespace ProjectQuizTest {
 		   }
 
 
-	};
+			private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) {
+				if (currentQuestion > 0) {
+					currentQuestion -= 1;
+					load_info();
+
+					array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
+					for (int i = 0; i < checkBoxes->Length; i++)
+					{
+						checkBoxes[i]->Checked = false;
+					}
+
+					for (int i = 0; i < userAnswers[currentQuestion]->Length; i++) {
+						String^ answer = userAnswers[currentQuestion][i];
+						for (int symbol = 'A'; symbol < 'G'; symbol++) {
+							if (answer[0] == symbol) checkBoxes[i]->Checked = true;
+						}
+					}
+				}
+			}
+
+
+	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
+		// start time
+		// label
+	}
+};
 }
