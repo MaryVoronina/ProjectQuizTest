@@ -1,38 +1,46 @@
-1. Which famous monument is located in Paris, France?
-A. The Colosseum
-B. The Statue of Liberty
-C. The Great Wall of China
-D. The Eiffel Tower
-Correct: A
+6 6
 
-2. What is the main source of light and heat for Earth?
-A. The Moon
-B. The Sun
-C. The Stars
-D. A Lamp
+Яка відома пам'ятка розташована в Парижі, Франція? 
+A. Колізей 
+B. Статуя Свободи 
+C. Велика Китайська стіна 
+D. Ейфелева вежа 
+Correct: D
+
+Що є основним джерелом світла та тепла для Землі? 
+A. Місяць 
+B. Сонце 
+C. Зірки 
+D. Лампа 
 Correct: B
 
-3. Which of the following animals are commonly kept as pets in a home?
-A. Dog
-B. Cat
-C. Lion
-D. Goldfish
-E. Hamster
+Яких із перелічених тварин зазвичай тримають як домашніх улюбленців вдома? 
+A. Собака 
+B. Кішка 
+C. Лев 
+D. Золота рибка 
+E. Хом'як 
 Correct: A B D E
 
-4. Which of these items are types of fruit?
-A. Carrot
-B. Apple
-C. Lettuce
-D. Banana
-E. Orange
+Які з цих предметів є видами фруктів? 
+A. Морква 
+B. Яблуко 
+C. Салат 
+D. Банан 
+E. Апельсин 
 Correct: B D E
 
-5. Which of the following are considered primary colors in the traditional pigment (paint) model?
-A. Green
-B. Red
-C. Black
-D. Blue
-E. Yellow
+Які з перелічених кольорів вважаються основними в традиційній пігментній (фарби) моделі? 
+A. Зелений 
+B. Червоний 
+C. Чорний 
+D. Синій 
+E. Жовтий 
 Correct: B D E
 
+Якій країні належить цей прапор?
+A. Німеччина 
+B. Україна
+C. Нідерланди 
+D. Бельгія 
+Correct: A
