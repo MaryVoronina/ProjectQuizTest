@@ -1,7 +1,7 @@
 #pragma once
 
-namespace ProjectQuizTest {
-
+namespace ProjectQuizTest
+{
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
@@ -14,26 +14,24 @@ namespace ProjectQuizTest {
 	/// </summary>
 	public ref class quiz : public System::Windows::Forms::Form
 	{
-	public:
-		quiz(void)
-		{
-			InitializeComponent();
-			//
-			//TODO: добавьте код конструктора
-			//
+	public: quiz(void)
+	{
+		InitializeComponent();
+		//
+		//TODO: добавьте код конструктора
+		//
 
-			currentQuestion = 0;
-			correctCount = 0;
+		currentQuestion = 0;
+		correctCount = 0;
 
-			open_file();
-			userAnswers = gcnew array<array<String^>^>(count_q);
-			for (int i = 0; i < count_q; i++) {
-				userAnswers[i] = gcnew array<String^>(count_q);
-			}
-
-			shuffle();
-			// load_info();
+		open_file();
+		userAnswers = gcnew array<array<String^>^>(count_q);
+		for (int i = 0; i < count_q; i++) {
+			userAnswers[i] = gcnew array<String^>(count_q);
 		}
+
+		shuffle();
+	}
 
 	protected:
 		/// <summary>
@@ -46,6 +44,7 @@ namespace ProjectQuizTest {
 				delete components;
 			}
 		}
+
 	private: System::Windows::Forms::Label^ label1;
 	protected:
 	private: System::Windows::Forms::FlowLayoutPanel^ flowLayoutPanel1;
@@ -72,6 +71,7 @@ namespace ProjectQuizTest {
 		int count_q;
 		int number_img;
 		String^ userName;
+	private: System::DateTime startTime;
 	private: System::Windows::Forms::CheckBox^ checkBox5;
 	private: System::Windows::Forms::Label^ label2;
 	private: System::Windows::Forms::PictureBox^ pictureBox1;
@@ -125,9 +125,10 @@ namespace ProjectQuizTest {
 			   // label1
 			   // 
 			   this->label1->AutoSize = true;
-			   this->label1->Location = System::Drawing::Point(382, 85);
+			   this->label1->Location = System::Drawing::Point(255, 55);
+			   this->label1->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
 			   this->label1->Name = L"label1";
-			   this->label1->Size = System::Drawing::Size(51, 20);
+			   this->label1->Size = System::Drawing::Size(35, 13);
 			   this->label1->TabIndex = 0;
 			   this->label1->Text = L"label1";
 			   this->label1->Visible = false;
@@ -139,18 +140,20 @@ namespace ProjectQuizTest {
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox3);
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox4);
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox5);
-			   this->flowLayoutPanel1->Location = System::Drawing::Point(384, 165);
+			   this->flowLayoutPanel1->Location = System::Drawing::Point(256, 107);
+			   this->flowLayoutPanel1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->flowLayoutPanel1->Name = L"flowLayoutPanel1";
-			   this->flowLayoutPanel1->Size = System::Drawing::Size(228, 442);
+			   this->flowLayoutPanel1->Size = System::Drawing::Size(152, 287);
 			   this->flowLayoutPanel1->TabIndex = 1;
 			   this->flowLayoutPanel1->Visible = false;
 			   // 
 			   // checkBox1
 			   // 
 			   this->checkBox1->AutoSize = true;
-			   this->checkBox1->Location = System::Drawing::Point(3, 3);
+			   this->checkBox1->Location = System::Drawing::Point(2, 2);
+			   this->checkBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox1->Name = L"checkBox1";
-			   this->checkBox1->Size = System::Drawing::Size(113, 24);
+			   this->checkBox1->Size = System::Drawing::Size(80, 17);
 			   this->checkBox1->TabIndex = 0;
 			   this->checkBox1->Text = L"checkBox1";
 			   this->checkBox1->UseVisualStyleBackColor = true;
@@ -159,9 +162,10 @@ namespace ProjectQuizTest {
 			   // checkBox2
 			   // 
 			   this->checkBox2->AutoSize = true;
-			   this->checkBox2->Location = System::Drawing::Point(3, 33);
+			   this->checkBox2->Location = System::Drawing::Point(2, 23);
+			   this->checkBox2->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox2->Name = L"checkBox2";
-			   this->checkBox2->Size = System::Drawing::Size(113, 24);
+			   this->checkBox2->Size = System::Drawing::Size(80, 17);
 			   this->checkBox2->TabIndex = 1;
 			   this->checkBox2->Text = L"checkBox2";
 			   this->checkBox2->UseVisualStyleBackColor = true;
@@ -170,9 +174,10 @@ namespace ProjectQuizTest {
 			   // checkBox3
 			   // 
 			   this->checkBox3->AutoSize = true;
-			   this->checkBox3->Location = System::Drawing::Point(3, 63);
+			   this->checkBox3->Location = System::Drawing::Point(2, 44);
+			   this->checkBox3->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox3->Name = L"checkBox3";
-			   this->checkBox3->Size = System::Drawing::Size(113, 24);
+			   this->checkBox3->Size = System::Drawing::Size(80, 17);
 			   this->checkBox3->TabIndex = 2;
 			   this->checkBox3->Text = L"checkBox3";
 			   this->checkBox3->UseVisualStyleBackColor = true;
@@ -181,9 +186,10 @@ namespace ProjectQuizTest {
 			   // checkBox4
 			   // 
 			   this->checkBox4->AutoSize = true;
-			   this->checkBox4->Location = System::Drawing::Point(3, 93);
+			   this->checkBox4->Location = System::Drawing::Point(2, 65);
+			   this->checkBox4->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox4->Name = L"checkBox4";
-			   this->checkBox4->Size = System::Drawing::Size(113, 24);
+			   this->checkBox4->Size = System::Drawing::Size(80, 17);
 			   this->checkBox4->TabIndex = 3;
 			   this->checkBox4->Text = L"checkBox4";
 			   this->checkBox4->UseVisualStyleBackColor = true;
@@ -192,9 +198,10 @@ namespace ProjectQuizTest {
 			   // checkBox5
 			   // 
 			   this->checkBox5->AutoSize = true;
-			   this->checkBox5->Location = System::Drawing::Point(3, 123);
+			   this->checkBox5->Location = System::Drawing::Point(2, 86);
+			   this->checkBox5->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox5->Name = L"checkBox5";
-			   this->checkBox5->Size = System::Drawing::Size(113, 24);
+			   this->checkBox5->Size = System::Drawing::Size(80, 17);
 			   this->checkBox5->TabIndex = 4;
 			   this->checkBox5->Text = L"checkBox5";
 			   this->checkBox5->UseVisualStyleBackColor = true;
@@ -202,9 +209,10 @@ namespace ProjectQuizTest {
 			   // 
 			   // button_next
 			   // 
-			   this->button_next->Location = System::Drawing::Point(398, 657);
+			   this->button_next->Location = System::Drawing::Point(265, 427);
+			   this->button_next->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->button_next->Name = L"button_next";
-			   this->button_next->Size = System::Drawing::Size(150, 75);
+			   this->button_next->Size = System::Drawing::Size(100, 49);
 			   this->button_next->TabIndex = 2;
 			   this->button_next->Text = L"Next";
 			   this->button_next->UseVisualStyleBackColor = true;
@@ -214,18 +222,20 @@ namespace ProjectQuizTest {
 			   // label2
 			   // 
 			   this->label2->AutoSize = true;
-			   this->label2->Location = System::Drawing::Point(388, 622);
+			   this->label2->Location = System::Drawing::Point(259, 404);
+			   this->label2->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
 			   this->label2->Name = L"label2";
-			   this->label2->Size = System::Drawing::Size(51, 20);
+			   this->label2->Size = System::Drawing::Size(35, 13);
 			   this->label2->TabIndex = 3;
 			   this->label2->Text = L"label2";
 			   this->label2->Visible = false;
 			   // 
 			   // pictureBox1
 			   // 
-			   this->pictureBox1->Location = System::Drawing::Point(686, 105);
+			   this->pictureBox1->Location = System::Drawing::Point(457, 68);
+			   this->pictureBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->pictureBox1->Name = L"pictureBox1";
-			   this->pictureBox1->Size = System::Drawing::Size(390, 183);
+			   this->pictureBox1->Size = System::Drawing::Size(260, 119);
 			   this->pictureBox1->TabIndex = 4;
 			   this->pictureBox1->TabStop = false;
 			   // 
@@ -235,35 +245,39 @@ namespace ProjectQuizTest {
 			   this->start_panel->Controls->Add(this->textBox1);
 			   this->start_panel->Controls->Add(this->button1);
 			   this->start_panel->Controls->Add(this->checkBox6);
-			   this->start_panel->Location = System::Drawing::Point(554, 294);
+			   this->start_panel->Location = System::Drawing::Point(369, 191);
+			   this->start_panel->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->start_panel->Name = L"start_panel";
-			   this->start_panel->Size = System::Drawing::Size(832, 439);
+			   this->start_panel->Size = System::Drawing::Size(555, 285);
 			   this->start_panel->TabIndex = 5;
 			   // 
 			   // label_write_name
 			   // 
 			   this->label_write_name->AutoSize = true;
-			   this->label_write_name->Location = System::Drawing::Point(3, 0);
+			   this->label_write_name->Location = System::Drawing::Point(2, 0);
+			   this->label_write_name->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
 			   this->label_write_name->Name = L"label_write_name";
-			   this->label_write_name->Size = System::Drawing::Size(144, 20);
+			   this->label_write_name->Size = System::Drawing::Size(95, 13);
 			   this->label_write_name->TabIndex = 0;
 			   this->label_write_name->Text = L"Введіть ваше ім\'я";
 			   this->label_write_name->Click += gcnew System::EventHandler(this, &quiz::label3_Click);
 			   // 
 			   // textBox1
 			   // 
-			   this->textBox1->Location = System::Drawing::Point(153, 3);
+			   this->textBox1->Location = System::Drawing::Point(101, 2);
+			   this->textBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->textBox1->Name = L"textBox1";
-			   this->textBox1->Size = System::Drawing::Size(552, 26);
+			   this->textBox1->Size = System::Drawing::Size(369, 20);
 			   this->textBox1->TabIndex = 1;
 			   // 
 			   // button1
 			   // 
 			   this->button1->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)), static_cast<System::Int32>(static_cast<System::Byte>(255)),
 				   static_cast<System::Int32>(static_cast<System::Byte>(255)));
-			   this->button1->Location = System::Drawing::Point(3, 35);
+			   this->button1->Location = System::Drawing::Point(2, 26);
+			   this->button1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->button1->Name = L"button1";
-			   this->button1->Size = System::Drawing::Size(176, 58);
+			   this->button1->Size = System::Drawing::Size(117, 38);
 			   this->button1->TabIndex = 2;
 			   this->button1->Text = L"Start";
 			   this->button1->UseVisualStyleBackColor = false;
@@ -272,18 +286,20 @@ namespace ProjectQuizTest {
 			   // checkBox6
 			   // 
 			   this->checkBox6->AutoSize = true;
-			   this->checkBox6->Location = System::Drawing::Point(185, 35);
+			   this->checkBox6->Location = System::Drawing::Point(123, 26);
+			   this->checkBox6->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->checkBox6->Name = L"checkBox6";
-			   this->checkBox6->Size = System::Drawing::Size(264, 24);
+			   this->checkBox6->Size = System::Drawing::Size(178, 17);
 			   this->checkBox6->TabIndex = 3;
 			   this->checkBox6->Text = L"Показувати результат одразу";
 			   this->checkBox6->UseVisualStyleBackColor = true;
 			   // 
 			   // button_back
 			   // 
-			   this->button_back->Location = System::Drawing::Point(201, 665);
+			   this->button_back->Location = System::Drawing::Point(134, 432);
+			   this->button_back->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
 			   this->button_back->Name = L"button_back";
-			   this->button_back->Size = System::Drawing::Size(139, 66);
+			   this->button_back->Size = System::Drawing::Size(93, 43);
 			   this->button_back->TabIndex = 6;
 			   this->button_back->Text = L"Back";
 			   this->button_back->UseVisualStyleBackColor = true;
@@ -298,17 +314,17 @@ namespace ProjectQuizTest {
 			   // label_timer
 			   // 
 			   this->label_timer->AutoSize = true;
-			   this->label_timer->Location = System::Drawing::Point(523, 49);
+			   this->label_timer->Location = System::Drawing::Point(349, 32);
+			   this->label_timer->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
 			   this->label_timer->Name = L"label_timer";
-			   this->label_timer->Size = System::Drawing::Size(86, 20);
+			   this->label_timer->Size = System::Drawing::Size(0, 13);
 			   this->label_timer->TabIndex = 7;
-			   this->label_timer->Text = L"label_timer";
 			   // 
 			   // quiz
 			   // 
-			   this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
+			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			   this->ClientSize = System::Drawing::Size(1712, 860);
+			   this->ClientSize = System::Drawing::Size(1141, 559);
 			   this->Controls->Add(this->label_timer);
 			   this->Controls->Add(this->button_back);
 			   this->Controls->Add(this->start_panel);
@@ -317,7 +333,8 @@ namespace ProjectQuizTest {
 			   this->Controls->Add(this->button_next);
 			   this->Controls->Add(this->flowLayoutPanel1);
 			   this->Controls->Add(this->label1);
-			   this->Name = L"quiz";
+			   this->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->Name = L"MainForm";
 			   this->Text = L"quiz";
 			   this->flowLayoutPanel1->ResumeLayout(false);
 			   this->flowLayoutPanel1->PerformLayout();
@@ -326,9 +343,9 @@ namespace ProjectQuizTest {
 			   this->start_panel->PerformLayout();
 			   this->ResumeLayout(false);
 			   this->PerformLayout();
-
 		   }
 #pragma endregion
+
 	private: int get_num_marks()
 	{
 		int count = 0;
@@ -351,8 +368,6 @@ namespace ProjectQuizTest {
 			return;
 		}
 
-		
-		// кількість відмічених
 		int selectedCount = 0;
 		if (checkBox1->Visible && checkBox1->Checked) selectedCount++;
 		if (checkBox2->Visible && checkBox2->Checked) selectedCount++;
@@ -364,26 +379,16 @@ namespace ProjectQuizTest {
 		int selectedIndex = 0;
 
 		if (checkBox1->Visible && checkBox1->Checked)
-		{
 			selected[selectedIndex++] = "A";
-		}
 		if (checkBox2->Visible && checkBox2->Checked)
-		{
 			selected[selectedIndex++] = "B";
-		}
 		if (checkBox3->Visible && checkBox3->Checked)
-		{
 			selected[selectedIndex++] = "C";
-		}
 		if (checkBox4->Visible && checkBox4->Checked)
-		{
 			selected[selectedIndex++] = "D";
-		}
 		if (checkBox5->Visible && checkBox5->Checked)
-		{
 			selected[selectedIndex++] = "E";
-		}
-		userAnswers[currentQuestion] = selected; // !!!
+		userAnswers[currentQuestion] = selected;
 
 		bool isCorrect = true;
 
@@ -400,7 +405,6 @@ namespace ProjectQuizTest {
 			if (!found)
 			{
 				isCorrect = false;
-
 			}
 		}
 
@@ -431,9 +435,13 @@ namespace ProjectQuizTest {
 		}
 		else
 		{
-			String^ result = String::Format("Правильних відповідей: {0}", correctCount, questions->Length);
+			timer1->Stop();
+			TimeSpan totalTime = System::DateTime::Now - startTime;
+			String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}",(int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
+
+			String^ result = String::Format("Правильних відповідей: {0}/{1}\nЧас виконання: {2}", correctCount, questions->Length, timeStr);
 			MessageBox::Show(result, "Результат тесту", MessageBoxButtons::OK, MessageBoxIcon::Information);
-			save_result(); 
+			save_result();
 			Application::Exit();
 		}
 	}
@@ -486,7 +494,7 @@ namespace ProjectQuizTest {
 					   array<String^>^ correctLetters = correctStr->Split(' ');
 
 					   int correctCount = 0;
-					   
+
 					   for (int i = 0; i < correctLetters->Length; i++)
 					   {
 						   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
@@ -510,9 +518,9 @@ namespace ProjectQuizTest {
 				   }
 			   }
 		   }
+
 		   void load_info()
 		   {
-			   // label1->Text = questions[currentQuestion];
 			   label1->Text = String::Format("{0}. {1}", currentQuestion + 1, questions[currentQuestion]);
 			   array<String^>^ currentAnswers = answers[currentQuestion];
 			   int count = currentAnswers->Length;
@@ -532,13 +540,9 @@ namespace ProjectQuizTest {
 			   }
 
 			   if (isMultipleChoice[currentQuestion])
-			   {
 				   label2->Text = L"Можна обрати кілька відповідей";
-			   }
 			   else
-			   {
 				   label2->Text = L"Оберіть тільки одну відповідь";
-			   }
 
 			   if (currentQuestion == number_img)
 			   {
@@ -549,6 +553,7 @@ namespace ProjectQuizTest {
 			   {
 				   pictureBox1->Visible = false;
 			   }
+			   load_answers();
 		   }
 
 
@@ -561,8 +566,9 @@ namespace ProjectQuizTest {
 		label2->Visible = true;
 		button_next->Visible = true;
 		button_back->Visible = true;
+
+		startTime = System::DateTime::Now;
 		timer1->Start();
-		// start time
 		load_info();
 	}
 
@@ -606,23 +612,25 @@ namespace ProjectQuizTest {
 		check(sender);
 	}
 
-		   void save_result() 
+		   void save_result()
 		   {
 			   System::IO::StreamWriter^ writer = gcnew System::IO::StreamWriter("results.txt", true, System::Text::Encoding::UTF8);
 
+			   TimeSpan totalTime = System::DateTime::Now - startTime;
+			   String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}", (int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
+
 			   String^ timestamp = System::DateTime::Now.ToString("dd.MM.yyyy HH:mm:ss");
-			   String^ result = String::Format("{0} - {1}: {2}/{3}", timestamp, userName, correctCount, questions->Length);
+			   String^ result = String::Format("{0} - {1}: {2}/{3} - Час: {4}", timestamp, userName, correctCount, questions->Length, timeStr);
 
 			   writer->WriteLine(result);
 			   writer->Close();
 		   }
 
-	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) 
-	{
-	}
+	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) {}
 
 
-		   void shuffle() {
+		   void shuffle() 
+		   {
 			   System::Random^ rnd = gcnew System::Random();
 			   for (int i = 0; i <= 20; i++)
 			   {
@@ -630,15 +638,10 @@ namespace ProjectQuizTest {
 				   ind1 = rnd->Next(0, 6);
 				   ind2 = rnd->Next(0, 6);
 
-				   if (number_img == ind1) 
-				   {
+				   if (number_img == ind1)
 					   number_img = ind2;
-				   }
-				   else if (number_img == ind2) 
-				   {
+				   else if (number_img == ind2)
 					   number_img = ind1;
-				   }
-
 				   String^ line = questions[ind1];
 				   questions[ind1] = questions[ind2];
 				   questions[ind2] = line;
@@ -654,39 +657,48 @@ namespace ProjectQuizTest {
 				   bool tmp3 = isMultipleChoice[ind1];
 				   isMultipleChoice[ind1] = isMultipleChoice[ind2];
 				   isMultipleChoice[ind2] = tmp3;
-
-
-
 			   }
-
-
 		   }
 
 
-			private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) {
-				if (currentQuestion > 0) {
-					currentQuestion -= 1;
-					load_info();
+	private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) 
+	{
+		if (currentQuestion > 0)
+		{
+			currentQuestion -= 1;
+			load_info();
+			load_answers();
+		}
+	}
 
-					array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
-					for (int i = 0; i < checkBoxes->Length; i++)
-					{
-						checkBoxes[i]->Checked = false;
-					}
+	private: void load_answers() 
+	{
+		array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
+		for (int i = 0; i < checkBoxes->Length; i++)
+		{
+			checkBoxes[i]->Checked = false;
+		}
 
-					for (int i = 0; i < userAnswers[currentQuestion]->Length; i++) {
-						String^ answer = userAnswers[currentQuestion][i];
-						for (int symbol = 'A'; symbol < 'G'; symbol++) {
-							if (answer[0] == symbol) checkBoxes[i]->Checked = true;
-						}
-					}
-				}
+		if (userAnswers[currentQuestion] != nullptr)
+		{
+			for (int i = 0; i < userAnswers[currentQuestion]->Length; i++)
+			{
+				String^ answer = userAnswers[currentQuestion][i];
+				if (answer == "A") checkBox1->Checked = true;
+				else if (answer == "B") checkBox2->Checked = true;
+				else if (answer == "C") checkBox3->Checked = true;
+				else if (answer == "D") checkBox4->Checked = true;
+				else if (answer == "E") checkBox5->Checked = true;
 			}
+		}
+	}
 
 
 	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
-		// start time
-		// label
+		TimeSpan elapsed = System::DateTime::Now - startTime;
+		label_timer->Text = String::Format("Час: {0:D2}:{1:D2}:{2:D2}", (int)elapsed.TotalHours, elapsed.Minutes, elapsed.Seconds);
 	}
-};
+	};
 }
+
+
