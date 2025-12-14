@@ -20,11 +20,19 @@ namespace ProjectQuizTest
 		//
 		//TODO: добавьте код конструктора
 		//
-
+		questionTimer = gcnew System::Windows::Forms::Timer();
+		questionTimer->Interval = 1000;
+		questionTimer->Tick += gcnew System::EventHandler(this, &quiz::questionTimer_Tick);
 		currentQuestion = 0;
 		correctCount = 0;
 
 		open_file();
+		if (questions == nullptr || questions->Length == 0)
+		{
+			MessageBox::Show("Помилка завантаження файлу з питаннями!", "Помилка");
+			return;
+		}
+
 		userAnswers = gcnew array<array<String^>^>(count_q);
 		for (int i = 0; i < count_q; i++) {
 			userAnswers[i] = gcnew array<String^>(count_q);
@@ -67,11 +75,15 @@ namespace ProjectQuizTest
 		array<array<String^>^>^ correctAnswers;
 		array<array<String^>^>^ userAnswers;
 		array<bool>^ isMultipleChoice;
+		System::DateTime startTime;
+
+		System::Windows::Forms::Timer^ questionTimer;
+		int questionTimeLeft;
 		int currentQuestion;
 		int count_q;
 		int number_img;
 		String^ userName;
-	private: System::DateTime startTime;
+	//private: System::DateTime startTime;
 	private: System::Windows::Forms::CheckBox^ checkBox5;
 	private: System::Windows::Forms::Label^ label2;
 	private: System::Windows::Forms::PictureBox^ pictureBox1;
@@ -84,7 +96,13 @@ namespace ProjectQuizTest
 	private: System::Windows::Forms::CheckBox^ checkBox6;
 	private: System::Windows::Forms::Button^ button_back;
 	private: System::Windows::Forms::Timer^ timer1;
+	//private: System::Windows::Forms::Timer^ questionTimer;
+
+
 	private: System::Windows::Forms::Label^ label_timer;
+	private: System::Windows::Forms::TextBox^ textBox_fileName;
+	private: System::Windows::Forms::Button^ button2;
+	private: System::Windows::Forms::OpenFileDialog^ openFileDialog1;
 
 
 
@@ -114,9 +132,12 @@ namespace ProjectQuizTest
 			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			   this->button1 = (gcnew System::Windows::Forms::Button());
 			   this->checkBox6 = (gcnew System::Windows::Forms::CheckBox());
+			   this->textBox_fileName = (gcnew System::Windows::Forms::TextBox());
+			   this->button2 = (gcnew System::Windows::Forms::Button());
 			   this->button_back = (gcnew System::Windows::Forms::Button());
 			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
 			   this->label_timer = (gcnew System::Windows::Forms::Label());
+			   this->openFileDialog1 = (gcnew System::Windows::Forms::OpenFileDialog());
 			   this->flowLayoutPanel1->SuspendLayout();
 			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			   this->start_panel->SuspendLayout();
@@ -141,7 +162,7 @@ namespace ProjectQuizTest
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox4);
 			   this->flowLayoutPanel1->Controls->Add(this->checkBox5);
 			   this->flowLayoutPanel1->Location = System::Drawing::Point(256, 107);
-			   this->flowLayoutPanel1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->flowLayoutPanel1->Margin = System::Windows::Forms::Padding(2);
 			   this->flowLayoutPanel1->Name = L"flowLayoutPanel1";
 			   this->flowLayoutPanel1->Size = System::Drawing::Size(152, 287);
 			   this->flowLayoutPanel1->TabIndex = 1;
@@ -151,7 +172,7 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox1->AutoSize = true;
 			   this->checkBox1->Location = System::Drawing::Point(2, 2);
-			   this->checkBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox1->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox1->Name = L"checkBox1";
 			   this->checkBox1->Size = System::Drawing::Size(80, 17);
 			   this->checkBox1->TabIndex = 0;
@@ -163,7 +184,7 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox2->AutoSize = true;
 			   this->checkBox2->Location = System::Drawing::Point(2, 23);
-			   this->checkBox2->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox2->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox2->Name = L"checkBox2";
 			   this->checkBox2->Size = System::Drawing::Size(80, 17);
 			   this->checkBox2->TabIndex = 1;
@@ -175,7 +196,7 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox3->AutoSize = true;
 			   this->checkBox3->Location = System::Drawing::Point(2, 44);
-			   this->checkBox3->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox3->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox3->Name = L"checkBox3";
 			   this->checkBox3->Size = System::Drawing::Size(80, 17);
 			   this->checkBox3->TabIndex = 2;
@@ -187,7 +208,7 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox4->AutoSize = true;
 			   this->checkBox4->Location = System::Drawing::Point(2, 65);
-			   this->checkBox4->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox4->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox4->Name = L"checkBox4";
 			   this->checkBox4->Size = System::Drawing::Size(80, 17);
 			   this->checkBox4->TabIndex = 3;
@@ -199,7 +220,7 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox5->AutoSize = true;
 			   this->checkBox5->Location = System::Drawing::Point(2, 86);
-			   this->checkBox5->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox5->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox5->Name = L"checkBox5";
 			   this->checkBox5->Size = System::Drawing::Size(80, 17);
 			   this->checkBox5->TabIndex = 4;
@@ -210,7 +231,7 @@ namespace ProjectQuizTest
 			   // button_next
 			   // 
 			   this->button_next->Location = System::Drawing::Point(265, 427);
-			   this->button_next->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->button_next->Margin = System::Windows::Forms::Padding(2);
 			   this->button_next->Name = L"button_next";
 			   this->button_next->Size = System::Drawing::Size(100, 49);
 			   this->button_next->TabIndex = 2;
@@ -233,7 +254,7 @@ namespace ProjectQuizTest
 			   // pictureBox1
 			   // 
 			   this->pictureBox1->Location = System::Drawing::Point(457, 68);
-			   this->pictureBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->pictureBox1->Margin = System::Windows::Forms::Padding(2);
 			   this->pictureBox1->Name = L"pictureBox1";
 			   this->pictureBox1->Size = System::Drawing::Size(260, 119);
 			   this->pictureBox1->TabIndex = 4;
@@ -245,8 +266,10 @@ namespace ProjectQuizTest
 			   this->start_panel->Controls->Add(this->textBox1);
 			   this->start_panel->Controls->Add(this->button1);
 			   this->start_panel->Controls->Add(this->checkBox6);
+			   this->start_panel->Controls->Add(this->textBox_fileName);
+			   this->start_panel->Controls->Add(this->button2);
 			   this->start_panel->Location = System::Drawing::Point(369, 191);
-			   this->start_panel->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->start_panel->Margin = System::Windows::Forms::Padding(2);
 			   this->start_panel->Name = L"start_panel";
 			   this->start_panel->Size = System::Drawing::Size(555, 285);
 			   this->start_panel->TabIndex = 5;
@@ -265,7 +288,7 @@ namespace ProjectQuizTest
 			   // textBox1
 			   // 
 			   this->textBox1->Location = System::Drawing::Point(101, 2);
-			   this->textBox1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->textBox1->Margin = System::Windows::Forms::Padding(2);
 			   this->textBox1->Name = L"textBox1";
 			   this->textBox1->Size = System::Drawing::Size(369, 20);
 			   this->textBox1->TabIndex = 1;
@@ -275,7 +298,7 @@ namespace ProjectQuizTest
 			   this->button1->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)), static_cast<System::Int32>(static_cast<System::Byte>(255)),
 				   static_cast<System::Int32>(static_cast<System::Byte>(255)));
 			   this->button1->Location = System::Drawing::Point(2, 26);
-			   this->button1->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->button1->Margin = System::Windows::Forms::Padding(2);
 			   this->button1->Name = L"button1";
 			   this->button1->Size = System::Drawing::Size(117, 38);
 			   this->button1->TabIndex = 2;
@@ -287,17 +310,35 @@ namespace ProjectQuizTest
 			   // 
 			   this->checkBox6->AutoSize = true;
 			   this->checkBox6->Location = System::Drawing::Point(123, 26);
-			   this->checkBox6->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->checkBox6->Margin = System::Windows::Forms::Padding(2);
 			   this->checkBox6->Name = L"checkBox6";
 			   this->checkBox6->Size = System::Drawing::Size(178, 17);
 			   this->checkBox6->TabIndex = 3;
 			   this->checkBox6->Text = L"Показувати результат одразу";
 			   this->checkBox6->UseVisualStyleBackColor = true;
 			   // 
+			   // textBox_fileName
+			   // 
+			   this->textBox_fileName->Location = System::Drawing::Point(306, 27);
+			   this->textBox_fileName->Name = L"textBox_fileName";
+			   this->textBox_fileName->Size = System::Drawing::Size(136, 20);
+			   this->textBox_fileName->TabIndex = 4;
+			   this->textBox_fileName->Text = L"quiz_questions.txt";
+			   // 
+			   // button2
+			   // 
+			   this->button2->Location = System::Drawing::Point(448, 27);
+			   this->button2->Name = L"button2";
+			   this->button2->Size = System::Drawing::Size(96, 23);
+			   this->button2->TabIndex = 5;
+			   this->button2->Text = L"Обрати файл";
+			   this->button2->UseVisualStyleBackColor = true;
+			   this->button2->Click += gcnew System::EventHandler(this, &quiz::button2_Click);
+			   // 
 			   // button_back
 			   // 
 			   this->button_back->Location = System::Drawing::Point(134, 432);
-			   this->button_back->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
+			   this->button_back->Margin = System::Windows::Forms::Padding(2);
 			   this->button_back->Name = L"button_back";
 			   this->button_back->Size = System::Drawing::Size(93, 43);
 			   this->button_back->TabIndex = 6;
@@ -320,6 +361,13 @@ namespace ProjectQuizTest
 			   this->label_timer->Size = System::Drawing::Size(0, 13);
 			   this->label_timer->TabIndex = 7;
 			   // 
+			   // openFileDialog1
+			   // 
+			   this->openFileDialog1->DefaultExt = L"txt";
+			   this->openFileDialog1->FileName = L"openFileDialog1";
+			   this->openFileDialog1->Filter = L"Текстові файли (*.txt)|*.txt|Всі файли (*.*)|*.*";
+			   this->openFileDialog1->Title = L"Оберіть файл з питаннями";
+			   // 
 			   // quiz
 			   // 
 			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
@@ -333,8 +381,8 @@ namespace ProjectQuizTest
 			   this->Controls->Add(this->button_next);
 			   this->Controls->Add(this->flowLayoutPanel1);
 			   this->Controls->Add(this->label1);
-			   this->Margin = System::Windows::Forms::Padding(2, 2, 2, 2);
-			   this->Name = L"MainForm";
+			   this->Margin = System::Windows::Forms::Padding(2);
+			   this->Name = L"quiz";
 			   this->Text = L"quiz";
 			   this->flowLayoutPanel1->ResumeLayout(false);
 			   this->flowLayoutPanel1->PerformLayout();
@@ -343,6 +391,7 @@ namespace ProjectQuizTest
 			   this->start_panel->PerformLayout();
 			   this->ResumeLayout(false);
 			   this->PerformLayout();
+
 		   }
 #pragma endregion
 
@@ -359,12 +408,50 @@ namespace ProjectQuizTest
 		}
 		return count;
 	}
+	void startQuestionTimer()
+	{
+		questionTimeLeft = 30;
+		label_timer->Text = String::Format("Час питання: {0} с", questionTimeLeft);
+		questionTimer->Start();
+	}
+		private: System::Void questionTimer_Tick(System::Object^ sender, System::EventArgs^ e)
+		{
+			questionTimeLeft--;
+			label_timer->Text = String::Format("Час питання: {0} с", questionTimeLeft);
 
+			if (questionTimeLeft <= 0)
+			{
+				questionTimer->Stop();
+
+				MessageBox::Show(
+					"Час на питання вичерпано!",
+					"Час вийшов",
+					MessageBoxButtons::OK,
+					MessageBoxIcon::Warning
+				);
+
+				currentQuestion++;
+
+				if (currentQuestion < questions->Length)
+				{
+					load_info();
+					startQuestionTimer();
+				}
+				else
+				{
+					timer1->Stop();
+					save_result();
+					Application::Exit();
+				}
+			}
+		}
 	private: System::Void button_next_Click(System::Object^ sender, System::EventArgs^ e)
 	{
+		questionTimer->Stop();
 		if (get_num_marks() == 0)
 		{
 			MessageBox::Show("Ви повинні обрати хоча б одну відповідь!", "Увага");
+			startQuestionTimer();
 			return;
 		}
 
@@ -421,6 +508,7 @@ namespace ProjectQuizTest
 		currentQuestion++;
 		if (currentQuestion < questions->Length)
 		{
+			startQuestionTimer();
 			if (checkBox6->Checked && isCorrect)
 			{
 				String^ result = String::Format("Відповідь правильна!");
@@ -428,7 +516,7 @@ namespace ProjectQuizTest
 			}
 			else if (checkBox6->Checked && !isCorrect)
 			{
-				String^ result = String::Format("Відповідь неправильна! Правильна відповідь: {0}", questions[currentQuestion - 1]);
+				String^ result = String::Format("Відповідь неправильна!");
 				MessageBox::Show(result, "Результат питання:", MessageBoxButtons::OK, MessageBoxIcon::Information);
 			}
 			load_info();
@@ -437,7 +525,8 @@ namespace ProjectQuizTest
 		{
 			timer1->Stop();
 			TimeSpan totalTime = System::DateTime::Now - startTime;
-			String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}",(int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
+			String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}",
+				(int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
 
 			String^ result = String::Format("Правильних відповідей: {0}/{1}\nЧас виконання: {2}", correctCount, questions->Length, timeStr);
 			MessageBox::Show(result, "Результат тесту", MessageBoxButtons::OK, MessageBoxIcon::Information);
@@ -448,7 +537,13 @@ namespace ProjectQuizTest
 
 		   void open_file()
 		   {
-			   array<String^>^ lines = System::IO::File::ReadAllLines("quiz_questions.txt", System::Text::Encoding::UTF8);
+			   String^ fileName = textBox_fileName->Text->Trim();
+			   if (String::IsNullOrEmpty(fileName) || !System::IO::File::Exists(fileName))
+			   {
+				   MessageBox::Show("Файл не знайдено! Будь ласка, оберіть правильний файл.", "Помилка");
+				   return;
+			   }
+			   array<String^>^ lines = System::IO::File::ReadAllLines(fileName, System::Text::Encoding::UTF8);
 
 			   array<String^>^ elements = lines[0]->Split(' ');
 			   count_q = Int32::Parse(elements[0]);
@@ -473,7 +568,15 @@ namespace ProjectQuizTest
 				   if (first_char >= '0' && first_char <= '9')
 				   {
 					   questionIndex++;
-					   questions[questionIndex] = lines[i];
+					   int dotIndex = lines[i]->IndexOf('.');
+					   if (dotIndex != -1 && dotIndex < lines[i]->Length - 1)
+					   {
+						   questions[questionIndex] = lines[i]->Substring(dotIndex + 1)->Trim();
+					   }
+					   else
+					   {
+						   questions[questionIndex] = lines[i];
+					   }
 					   optionCount = 0;
 				   }
 				   else if (first_char >= 'A' && first_char <= 'E' && lines[i][1] == '.')
@@ -521,6 +624,7 @@ namespace ProjectQuizTest
 
 		   void load_info()
 		   {
+			
 			   label1->Text = String::Format("{0}. {1}", currentQuestion + 1, questions[currentQuestion]);
 			   array<String^>^ currentAnswers = answers[currentQuestion];
 			   int count = currentAnswers->Length;
@@ -569,6 +673,7 @@ namespace ProjectQuizTest
 
 		startTime = System::DateTime::Now;
 		timer1->Start();
+		startQuestionTimer();
 		load_info();
 	}
 
@@ -629,8 +734,7 @@ namespace ProjectQuizTest
 	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) {}
 
 
-		   void shuffle() 
-		   {
+		   void shuffle() {
 			   System::Random^ rnd = gcnew System::Random();
 			   for (int i = 0; i <= 20; i++)
 			   {
@@ -642,6 +746,8 @@ namespace ProjectQuizTest
 					   number_img = ind2;
 				   else if (number_img == ind2)
 					   number_img = ind1;
+
+				  
 				   String^ line = questions[ind1];
 				   questions[ind1] = questions[ind2];
 				   questions[ind2] = line;
@@ -661,8 +767,7 @@ namespace ProjectQuizTest
 		   }
 
 
-	private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) 
-	{
+	private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) {
 		if (currentQuestion > 0)
 		{
 			currentQuestion -= 1;
@@ -671,8 +776,7 @@ namespace ProjectQuizTest
 		}
 	}
 
-	private: void load_answers() 
-	{
+	private: void load_answers() {
 		array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
 		for (int i = 0; i < checkBoxes->Length; i++)
 		{
@@ -698,7 +802,19 @@ namespace ProjectQuizTest
 		TimeSpan elapsed = System::DateTime::Now - startTime;
 		label_timer->Text = String::Format("Час: {0:D2}:{1:D2}:{2:D2}", (int)elapsed.TotalHours, elapsed.Minutes, elapsed.Seconds);
 	}
+
+	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+		{
+			textBox_fileName->Text = openFileDialog1->FileName;
+		}
+	}
+
 	};
+	
+
+
 }
 
+// Основний файл
 
