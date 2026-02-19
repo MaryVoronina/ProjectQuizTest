@@ -1,820 +1,252 @@
 #pragma once
 
-namespace ProjectQuizTest
+namespace ProjectQuizTest 
 {
-	using namespace System;
-	using namespace System::ComponentModel;
-	using namespace System::Collections;
-	using namespace System::Windows::Forms;
-	using namespace System::Data;
-	using namespace System::Drawing;
+    using namespace System;
+    using namespace System::ComponentModel;
+    using namespace System::Collections;
+    using namespace System::Windows::Forms;
+    using namespace System::Data;
+    using namespace System::Drawing;
+    using namespace System::IO;
 
-	/// <summary>
-	/// Сводка для quiz
-	/// </summary>
-	public ref class quiz : public System::Windows::Forms::Form
-	{
-	public: quiz(void)
-	{
-		InitializeComponent();
-		//
-		//TODO: добавьте код конструктора
-		//
-		questionTimer = gcnew System::Windows::Forms::Timer();
-		questionTimer->Interval = 1000;
-		questionTimer->Tick += gcnew System::EventHandler(this, &quiz::questionTimer_Tick);
-		currentQuestion = 0;
-		correctCount = 0;
+    public ref class quiz : public System::Windows::Forms::Form
+    {
+    private:
+        array<int>^ mas_data;
+        int arraySize, i, j;
+        bool isSorted, swapped;
+        int MAX_VALUE;
 
-		open_file();
-		if (questions == nullptr || questions->Length == 0)
+        System::Windows::Forms::Panel^ drawPanel;
+        System::Windows::Forms::Button^ button_next;
+        System::Windows::Forms::MenuStrip^ menuStrip1;
+        System::Windows::Forms::ToolStripMenuItem^ menuFile, ^ openItem, ^ saveItem, ^ randomItem;
+
+
+        System::Windows::Forms::Panel^ startPanel;
+        System::Windows::Forms::Button^ btnStartProject;
+        System::Windows::Forms::Label^ lblWelcome;
+
+    public:
+        quiz(void)
+        {
+            InitializeComponent();
+            MAX_VALUE = 100;
+            mas_data = nullptr;
+            isSorted = true;
+            swapped = false;
+        }
+
+    private:
+        void InitializeComponent(void)
+        {
+            this->menuStrip1 = (gcnew System::Windows::Forms::MenuStrip());
+            this->menuFile = (gcnew System::Windows::Forms::ToolStripMenuItem(L"File"));
+            this->openItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Open"));
+            this->saveItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Save"));
+            this->randomItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Randomize"));
+            this->drawPanel = (gcnew System::Windows::Forms::Panel());
+            this->button_next = (gcnew System::Windows::Forms::Button());
+
+
+            this->menuStrip1->Items->Add(this->menuFile);
+            this->menuFile->DropDownItems->AddRange(gcnew array<ToolStripItem^>{openItem, saveItem, randomItem});
+            this->menuStrip1->Visible = false;
+
+            this->openItem->Click += gcnew EventHandler(this, &quiz::open_file);
+            this->saveItem->Click += gcnew EventHandler(this, &quiz::save_file);
+            this->randomItem->Click += gcnew EventHandler(this, &quiz::button_reset_Click);
+
+
+            this->drawPanel->BackColor = Color::White;
+            this->drawPanel->BorderStyle = BorderStyle::FixedSingle;
+            this->drawPanel->Location = Point(20, 40);
+            this->drawPanel->Size = System::Drawing::Size(740, 400);
+            this->drawPanel->Anchor = (AnchorStyles)(AnchorStyles::Top | AnchorStyles::Bottom | AnchorStyles::Left | AnchorStyles::Right);
+            this->drawPanel->Paint += gcnew PaintEventHandler(this, &quiz::drawPanel_Paint);
+
+  
+            this->button_next->Text = L"Next Step";
+            this->button_next->Location = Point(20, 460);
+            this->button_next->Size = System::Drawing::Size(200, 40);
+            this->button_next->Anchor = (AnchorStyles)(AnchorStyles::Bottom | AnchorStyles::Left);
+            this->button_next->Click += gcnew EventHandler(this, &quiz::button_next_Click);
+
+            this->startPanel = (gcnew System::Windows::Forms::Panel());
+            this->startPanel->Dock = DockStyle::Fill;
+            this->startPanel->BackColor = Color::White; 
+
+            this->lblWelcome = (gcnew System::Windows::Forms::Label());
+            this->lblWelcome->Text = L"Bubble Sort Visualizer";
+            this->lblWelcome->Font = (gcnew System::Drawing::Font(L"Segoe UI", 24, FontStyle::Bold));
+            this->lblWelcome->AutoSize = true;
+
+            this->btnStartProject = (gcnew System::Windows::Forms::Button());
+            this->btnStartProject->Text = L"START";
+            this->btnStartProject->Font = (gcnew System::Drawing::Font(L"Segoe UI", 14, FontStyle::Bold));
+            this->btnStartProject->Size = System::Drawing::Size(200, 60);
+            this->btnStartProject->Click += gcnew EventHandler(this, &quiz::OnStartBtnClick);
+
+            this->startPanel->Controls->Add(lblWelcome);
+            this->startPanel->Controls->Add(btnStartProject);
+            this->startPanel->Layout += gcnew LayoutEventHandler(this, &quiz::CenterStartElements);
+
+            
+            this->ClientSize = System::Drawing::Size(800, 520);
+            this->Controls->Add(this->startPanel);
+            this->Controls->Add(this->drawPanel);
+            this->Controls->Add(this->button_next);
+            this->Controls->Add(this->menuStrip1);
+            this->MainMenuStrip = this->menuStrip1;
+            this->Text = L"Sorting Visualizer";
+            this->StartPosition = FormStartPosition::CenterScreen;
+            this->Resize += gcnew EventHandler(this, &quiz::Form_Resize);
+        }
+
+        void CenterStartElements(Object^ sender, LayoutEventArgs^ e)
+        {
+            
+            lblWelcome->Location = Point((startPanel->Width - lblWelcome->Width) / 2,(startPanel->Height / 2) - 80);
+            
+            btnStartProject->Location = Point((startPanel->Width - btnStartProject->Width) / 2,(startPanel->Height / 2) + 20);
+        }
+
+        void OnStartBtnClick(Object^ sender, EventArgs^ e)
+        {
+            this->startPanel->Visible = false;
+            this->menuStrip1->Visible = true; 
+            button_reset_Click(nullptr, nullptr);
+        }
+
+        void perform_step() 
+        {
+            if (i < arraySize - 1) 
+            {
+                if (j < arraySize - i - 1) {
+                    if (mas_data[j] > mas_data[j + 1]) 
+                    {
+                        int tmp = mas_data[j];
+                        mas_data[j] = mas_data[j + 1];
+                        mas_data[j + 1] = tmp;
+                        swapped = true;
+                    }
+                    j++;
+                }
+                else 
+                {
+                    if (!swapped) 
+                    { 
+                        finish_sorting(); 
+                        return;
+                    }
+                    j = 0;
+                    i++;
+                    swapped = false;
+                }
+            }
+            else 
+            { 
+                finish_sorting();
+            }
+        }
+
+        void finish_sorting() 
+        {
+            isSorted = true;
+            j = -1;
+            this->drawPanel->Invalidate();
+            MessageBox::Show("Sorting complete!", "Done");
+        }
+
+
+
+        System::Void button_next_Click(Object^ sender, EventArgs^ e) {
+            if (mas_data != nullptr && !isSorted) {
+                perform_step();
+                drawPanel->Invalidate();
+            }
+        }
+
+        System::Void button_reset_Click(Object^ sender, EventArgs^ e) {
+            Random^ rnd = gcnew Random();
+            arraySize = rnd->Next(5, 15);
+            mas_data = gcnew array<int>(arraySize);
+            for (int k = 0; k < arraySize; k++) mas_data[k] = rnd->Next(5, MAX_VALUE);
+            i = 0; j = 0; isSorted = false; swapped = false;
+            drawPanel->Invalidate();
+        }
+
+        System::Void drawPanel_Paint(Object^ sender, PaintEventArgs^ e) {
+            Graphics^ g = e->Graphics;
+            if (mas_data == nullptr) return;
+            float barSpacing = (float)drawPanel->Width / arraySize;
+            float barWidth = barSpacing * 0.75f;
+            int maxValue = 1;
+            for (int k = 0; k < arraySize; k++)
+
+            {
+                if (mas_data[k] > maxValue) maxValue = mas_data[k];
+            }
+
+            for (int k = 0; k < arraySize; k++) 
+            {
+                int bh = (int)((mas_data[k] / (float)maxValue) * (drawPanel->Height - 75));
+                float x = k * barSpacing + (barSpacing - barWidth) / 2;
+                float y = drawPanel->Height - bh - 25;
+
+
+                Brush^ barBrush;
+
+                if (isSorted) 
+                {
+                    barBrush = Brushes::LightGreen; 
+                }
+                else if (k == j || k == j + 1) 
+                {
+                    barBrush = Brushes::LightPink;
+                }
+                else 
+                {
+                    barBrush = Brushes::SkyBlue;  
+                }
+                g->FillRectangle(barBrush, x, y, barWidth, (float)bh);
+                g->DrawRectangle(Pens::Black, x, y, barWidth, (float)bh);
+                g->DrawString(mas_data[k].ToString(), gcnew System::Drawing::Font("Arial", 9, FontStyle::Bold), Brushes::Black, x, y - 20);
+            }
+        }
+
+        System::Void open_file(Object^ sender, EventArgs^ e) 
 		{
-			MessageBox::Show("Помилка завантаження файлу з питаннями!", "Помилка");
-			return;
-		}
-
-		userAnswers = gcnew array<array<String^>^>(count_q);
-		for (int i = 0; i < count_q; i++) {
-			userAnswers[i] = gcnew array<String^>(count_q);
-		}
-
-		shuffle();
-	}
-
-	protected:
-		/// <summary>
-		/// Освободить все используемые ресурсы.
-		/// </summary>
-		~quiz()
-		{
-			if (components)
+            OpenFileDialog^ ofd = gcnew OpenFileDialog();
+            if (ofd->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
 			{
-				delete components;
-			}
-		}
-
-	private: System::Windows::Forms::Label^ label1;
-	protected:
-	private: System::Windows::Forms::FlowLayoutPanel^ flowLayoutPanel1;
-	private: System::Windows::Forms::Button^ button_next;
-	private: System::Windows::Forms::CheckBox^ checkBox1;
-	private: System::Windows::Forms::CheckBox^ checkBox2;
-	private: System::Windows::Forms::CheckBox^ checkBox3;
-	private: System::Windows::Forms::CheckBox^ checkBox4;
-	private: System::ComponentModel::IContainer^ components;
-
-
-	private:
-		/// <summary>
-		/// Обязательная переменная конструктора.
-		/// </summary>
-
-
-		array<String^>^ questions;
-		array<array<String^>^>^ answers;
-		array<array<String^>^>^ correctAnswers;
-		array<array<String^>^>^ userAnswers;
-		array<bool>^ isMultipleChoice;
-		System::DateTime startTime;
-
-		System::Windows::Forms::Timer^ questionTimer;
-		int questionTimeLeft;
-		int currentQuestion;
-		int count_q;
-		int number_img;
-		String^ userName;
-	//private: System::DateTime startTime;
-	private: System::Windows::Forms::CheckBox^ checkBox5;
-	private: System::Windows::Forms::Label^ label2;
-	private: System::Windows::Forms::PictureBox^ pictureBox1;
-	private: System::Windows::Forms::FlowLayoutPanel^ start_panel;
-	private: System::Windows::Forms::Label^ label_write_name;
-
-
-	private: System::Windows::Forms::TextBox^ textBox1;
-	private: System::Windows::Forms::Button^ button1;
-	private: System::Windows::Forms::CheckBox^ checkBox6;
-	private: System::Windows::Forms::Button^ button_back;
-	private: System::Windows::Forms::Timer^ timer1;
-	//private: System::Windows::Forms::Timer^ questionTimer;
-
-
-	private: System::Windows::Forms::Label^ label_timer;
-	private: System::Windows::Forms::TextBox^ textBox_fileName;
-	private: System::Windows::Forms::Button^ button2;
-	private: System::Windows::Forms::OpenFileDialog^ openFileDialog1;
-
-
-
-
-		   int correctCount;
-
-#pragma region Windows Form Designer generated code
-		   /// <summary>
-		   /// Требуемый метод для поддержки конструктора — не изменяйте 
-		   /// содержимое этого метода с помощью редактора кода.
-		   /// </summary>
-		   void InitializeComponent(void)
-		   {
-			   this->components = (gcnew System::ComponentModel::Container());
-			   this->label1 = (gcnew System::Windows::Forms::Label());
-			   this->flowLayoutPanel1 = (gcnew System::Windows::Forms::FlowLayoutPanel());
-			   this->checkBox1 = (gcnew System::Windows::Forms::CheckBox());
-			   this->checkBox2 = (gcnew System::Windows::Forms::CheckBox());
-			   this->checkBox3 = (gcnew System::Windows::Forms::CheckBox());
-			   this->checkBox4 = (gcnew System::Windows::Forms::CheckBox());
-			   this->checkBox5 = (gcnew System::Windows::Forms::CheckBox());
-			   this->button_next = (gcnew System::Windows::Forms::Button());
-			   this->label2 = (gcnew System::Windows::Forms::Label());
-			   this->pictureBox1 = (gcnew System::Windows::Forms::PictureBox());
-			   this->start_panel = (gcnew System::Windows::Forms::FlowLayoutPanel());
-			   this->label_write_name = (gcnew System::Windows::Forms::Label());
-			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
-			   this->button1 = (gcnew System::Windows::Forms::Button());
-			   this->checkBox6 = (gcnew System::Windows::Forms::CheckBox());
-			   this->textBox_fileName = (gcnew System::Windows::Forms::TextBox());
-			   this->button2 = (gcnew System::Windows::Forms::Button());
-			   this->button_back = (gcnew System::Windows::Forms::Button());
-			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
-			   this->label_timer = (gcnew System::Windows::Forms::Label());
-			   this->openFileDialog1 = (gcnew System::Windows::Forms::OpenFileDialog());
-			   this->flowLayoutPanel1->SuspendLayout();
-			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
-			   this->start_panel->SuspendLayout();
-			   this->SuspendLayout();
-			   // 
-			   // label1
-			   // 
-			   this->label1->AutoSize = true;
-			   this->label1->Location = System::Drawing::Point(255, 55);
-			   this->label1->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
-			   this->label1->Name = L"label1";
-			   this->label1->Size = System::Drawing::Size(35, 13);
-			   this->label1->TabIndex = 0;
-			   this->label1->Text = L"label1";
-			   this->label1->Visible = false;
-			   // 
-			   // flowLayoutPanel1
-			   // 
-			   this->flowLayoutPanel1->Controls->Add(this->checkBox1);
-			   this->flowLayoutPanel1->Controls->Add(this->checkBox2);
-			   this->flowLayoutPanel1->Controls->Add(this->checkBox3);
-			   this->flowLayoutPanel1->Controls->Add(this->checkBox4);
-			   this->flowLayoutPanel1->Controls->Add(this->checkBox5);
-			   this->flowLayoutPanel1->Location = System::Drawing::Point(256, 107);
-			   this->flowLayoutPanel1->Margin = System::Windows::Forms::Padding(2);
-			   this->flowLayoutPanel1->Name = L"flowLayoutPanel1";
-			   this->flowLayoutPanel1->Size = System::Drawing::Size(152, 287);
-			   this->flowLayoutPanel1->TabIndex = 1;
-			   this->flowLayoutPanel1->Visible = false;
-			   // 
-			   // checkBox1
-			   // 
-			   this->checkBox1->AutoSize = true;
-			   this->checkBox1->Location = System::Drawing::Point(2, 2);
-			   this->checkBox1->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox1->Name = L"checkBox1";
-			   this->checkBox1->Size = System::Drawing::Size(80, 17);
-			   this->checkBox1->TabIndex = 0;
-			   this->checkBox1->Text = L"checkBox1";
-			   this->checkBox1->UseVisualStyleBackColor = true;
-			   this->checkBox1->CheckedChanged += gcnew System::EventHandler(this, &quiz::checkBox1_CheckedChanged);
-			   // 
-			   // checkBox2
-			   // 
-			   this->checkBox2->AutoSize = true;
-			   this->checkBox2->Location = System::Drawing::Point(2, 23);
-			   this->checkBox2->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox2->Name = L"checkBox2";
-			   this->checkBox2->Size = System::Drawing::Size(80, 17);
-			   this->checkBox2->TabIndex = 1;
-			   this->checkBox2->Text = L"checkBox2";
-			   this->checkBox2->UseVisualStyleBackColor = true;
-			   this->checkBox2->CheckedChanged += gcnew System::EventHandler(this, &quiz::checkBox2_CheckedChanged);
-			   // 
-			   // checkBox3
-			   // 
-			   this->checkBox3->AutoSize = true;
-			   this->checkBox3->Location = System::Drawing::Point(2, 44);
-			   this->checkBox3->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox3->Name = L"checkBox3";
-			   this->checkBox3->Size = System::Drawing::Size(80, 17);
-			   this->checkBox3->TabIndex = 2;
-			   this->checkBox3->Text = L"checkBox3";
-			   this->checkBox3->UseVisualStyleBackColor = true;
-			   this->checkBox3->CheckedChanged += gcnew System::EventHandler(this, &quiz::checkBox3_CheckedChanged);
-			   // 
-			   // checkBox4
-			   // 
-			   this->checkBox4->AutoSize = true;
-			   this->checkBox4->Location = System::Drawing::Point(2, 65);
-			   this->checkBox4->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox4->Name = L"checkBox4";
-			   this->checkBox4->Size = System::Drawing::Size(80, 17);
-			   this->checkBox4->TabIndex = 3;
-			   this->checkBox4->Text = L"checkBox4";
-			   this->checkBox4->UseVisualStyleBackColor = true;
-			   this->checkBox4->CheckedChanged += gcnew System::EventHandler(this, &quiz::checkBox4_CheckedChanged);
-			   // 
-			   // checkBox5
-			   // 
-			   this->checkBox5->AutoSize = true;
-			   this->checkBox5->Location = System::Drawing::Point(2, 86);
-			   this->checkBox5->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox5->Name = L"checkBox5";
-			   this->checkBox5->Size = System::Drawing::Size(80, 17);
-			   this->checkBox5->TabIndex = 4;
-			   this->checkBox5->Text = L"checkBox5";
-			   this->checkBox5->UseVisualStyleBackColor = true;
-			   this->checkBox5->CheckedChanged += gcnew System::EventHandler(this, &quiz::checkBox5_CheckedChanged);
-			   // 
-			   // button_next
-			   // 
-			   this->button_next->Location = System::Drawing::Point(265, 427);
-			   this->button_next->Margin = System::Windows::Forms::Padding(2);
-			   this->button_next->Name = L"button_next";
-			   this->button_next->Size = System::Drawing::Size(100, 49);
-			   this->button_next->TabIndex = 2;
-			   this->button_next->Text = L"Next";
-			   this->button_next->UseVisualStyleBackColor = true;
-			   this->button_next->Visible = false;
-			   this->button_next->Click += gcnew System::EventHandler(this, &quiz::button_next_Click);
-			   // 
-			   // label2
-			   // 
-			   this->label2->AutoSize = true;
-			   this->label2->Location = System::Drawing::Point(259, 404);
-			   this->label2->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
-			   this->label2->Name = L"label2";
-			   this->label2->Size = System::Drawing::Size(35, 13);
-			   this->label2->TabIndex = 3;
-			   this->label2->Text = L"label2";
-			   this->label2->Visible = false;
-			   // 
-			   // pictureBox1
-			   // 
-			   this->pictureBox1->Location = System::Drawing::Point(457, 68);
-			   this->pictureBox1->Margin = System::Windows::Forms::Padding(2);
-			   this->pictureBox1->Name = L"pictureBox1";
-			   this->pictureBox1->Size = System::Drawing::Size(260, 119);
-			   this->pictureBox1->TabIndex = 4;
-			   this->pictureBox1->TabStop = false;
-			   // 
-			   // start_panel
-			   // 
-			   this->start_panel->Controls->Add(this->label_write_name);
-			   this->start_panel->Controls->Add(this->textBox1);
-			   this->start_panel->Controls->Add(this->button1);
-			   this->start_panel->Controls->Add(this->checkBox6);
-			   this->start_panel->Controls->Add(this->textBox_fileName);
-			   this->start_panel->Controls->Add(this->button2);
-			   this->start_panel->Location = System::Drawing::Point(369, 191);
-			   this->start_panel->Margin = System::Windows::Forms::Padding(2);
-			   this->start_panel->Name = L"start_panel";
-			   this->start_panel->Size = System::Drawing::Size(555, 285);
-			   this->start_panel->TabIndex = 5;
-			   // 
-			   // label_write_name
-			   // 
-			   this->label_write_name->AutoSize = true;
-			   this->label_write_name->Location = System::Drawing::Point(2, 0);
-			   this->label_write_name->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
-			   this->label_write_name->Name = L"label_write_name";
-			   this->label_write_name->Size = System::Drawing::Size(95, 13);
-			   this->label_write_name->TabIndex = 0;
-			   this->label_write_name->Text = L"Введіть ваше ім\'я";
-			   this->label_write_name->Click += gcnew System::EventHandler(this, &quiz::label3_Click);
-			   // 
-			   // textBox1
-			   // 
-			   this->textBox1->Location = System::Drawing::Point(101, 2);
-			   this->textBox1->Margin = System::Windows::Forms::Padding(2);
-			   this->textBox1->Name = L"textBox1";
-			   this->textBox1->Size = System::Drawing::Size(369, 20);
-			   this->textBox1->TabIndex = 1;
-			   // 
-			   // button1
-			   // 
-			   this->button1->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(192)), static_cast<System::Int32>(static_cast<System::Byte>(255)),
-				   static_cast<System::Int32>(static_cast<System::Byte>(255)));
-			   this->button1->Location = System::Drawing::Point(2, 26);
-			   this->button1->Margin = System::Windows::Forms::Padding(2);
-			   this->button1->Name = L"button1";
-			   this->button1->Size = System::Drawing::Size(117, 38);
-			   this->button1->TabIndex = 2;
-			   this->button1->Text = L"Start";
-			   this->button1->UseVisualStyleBackColor = false;
-			   this->button1->Click += gcnew System::EventHandler(this, &quiz::button1_Click);
-			   // 
-			   // checkBox6
-			   // 
-			   this->checkBox6->AutoSize = true;
-			   this->checkBox6->Location = System::Drawing::Point(123, 26);
-			   this->checkBox6->Margin = System::Windows::Forms::Padding(2);
-			   this->checkBox6->Name = L"checkBox6";
-			   this->checkBox6->Size = System::Drawing::Size(178, 17);
-			   this->checkBox6->TabIndex = 3;
-			   this->checkBox6->Text = L"Показувати результат одразу";
-			   this->checkBox6->UseVisualStyleBackColor = true;
-			   // 
-			   // textBox_fileName
-			   // 
-			   this->textBox_fileName->Location = System::Drawing::Point(306, 27);
-			   this->textBox_fileName->Name = L"textBox_fileName";
-			   this->textBox_fileName->Size = System::Drawing::Size(136, 20);
-			   this->textBox_fileName->TabIndex = 4;
-			   this->textBox_fileName->Text = L"quiz_questions.txt";
-			   // 
-			   // button2
-			   // 
-			   this->button2->Location = System::Drawing::Point(448, 27);
-			   this->button2->Name = L"button2";
-			   this->button2->Size = System::Drawing::Size(96, 23);
-			   this->button2->TabIndex = 5;
-			   this->button2->Text = L"Обрати файл";
-			   this->button2->UseVisualStyleBackColor = true;
-			   this->button2->Click += gcnew System::EventHandler(this, &quiz::button2_Click);
-			   // 
-			   // button_back
-			   // 
-			   this->button_back->Location = System::Drawing::Point(134, 432);
-			   this->button_back->Margin = System::Windows::Forms::Padding(2);
-			   this->button_back->Name = L"button_back";
-			   this->button_back->Size = System::Drawing::Size(93, 43);
-			   this->button_back->TabIndex = 6;
-			   this->button_back->Text = L"Back";
-			   this->button_back->UseVisualStyleBackColor = true;
-			   this->button_back->Visible = false;
-			   this->button_back->Click += gcnew System::EventHandler(this, &quiz::button_back_Click);
-			   // 
-			   // timer1
-			   // 
-			   this->timer1->Interval = 1000;
-			   this->timer1->Tick += gcnew System::EventHandler(this, &quiz::timer1_Tick);
-			   // 
-			   // label_timer
-			   // 
-			   this->label_timer->AutoSize = true;
-			   this->label_timer->Location = System::Drawing::Point(349, 32);
-			   this->label_timer->Margin = System::Windows::Forms::Padding(2, 0, 2, 0);
-			   this->label_timer->Name = L"label_timer";
-			   this->label_timer->Size = System::Drawing::Size(0, 13);
-			   this->label_timer->TabIndex = 7;
-			   // 
-			   // openFileDialog1
-			   // 
-			   this->openFileDialog1->DefaultExt = L"txt";
-			   this->openFileDialog1->FileName = L"openFileDialog1";
-			   this->openFileDialog1->Filter = L"Текстові файли (*.txt)|*.txt|Всі файли (*.*)|*.*";
-			   this->openFileDialog1->Title = L"Оберіть файл з питаннями";
-			   // 
-			   // quiz
-			   // 
-			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
-			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			   this->ClientSize = System::Drawing::Size(1141, 559);
-			   this->Controls->Add(this->label_timer);
-			   this->Controls->Add(this->button_back);
-			   this->Controls->Add(this->start_panel);
-			   this->Controls->Add(this->pictureBox1);
-			   this->Controls->Add(this->label2);
-			   this->Controls->Add(this->button_next);
-			   this->Controls->Add(this->flowLayoutPanel1);
-			   this->Controls->Add(this->label1);
-			   this->Margin = System::Windows::Forms::Padding(2);
-			   this->Name = L"quiz";
-			   this->Text = L"quiz";
-			   this->flowLayoutPanel1->ResumeLayout(false);
-			   this->flowLayoutPanel1->PerformLayout();
-			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->EndInit();
-			   this->start_panel->ResumeLayout(false);
-			   this->start_panel->PerformLayout();
-			   this->ResumeLayout(false);
-			   this->PerformLayout();
-
-		   }
-#pragma endregion
-
-	private: int get_num_marks()
-	{
-		int count = 0;
-		array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
-		for (int i = 0; i < checkBoxes->Length; i++)
-		{
-			if (checkBoxes[i]->Visible && checkBoxes[i]->Checked)
-			{
-				count++;
-			}
-		}
-		return count;
-	}
-	void startQuestionTimer()
-	{
-		questionTimeLeft = 30;
-		label_timer->Text = String::Format("Час питання: {0} с", questionTimeLeft);
-		questionTimer->Start();
-	}
-		private: System::Void questionTimer_Tick(System::Object^ sender, System::EventArgs^ e)
-		{
-			questionTimeLeft--;
-			label_timer->Text = String::Format("Час питання: {0} с", questionTimeLeft);
-
-			if (questionTimeLeft <= 0)
-			{
-				questionTimer->Stop();
-
-				MessageBox::Show(
-					"Час на питання вичерпано!",
-					"Час вийшов",
-					MessageBoxButtons::OK,
-					MessageBoxIcon::Warning
-				);
-
-				currentQuestion++;
-
-				if (currentQuestion < questions->Length)
+                String^ content = File::ReadAllText(ofd->FileName);
+                array<String^>^ num = content->Split(gcnew array<Char>{' ', '\n', '\r', '\t', ','}, StringSplitOptions::RemoveEmptyEntries);
+                if (num->Length > 0) 
 				{
-					load_info();
-					startQuestionTimer();
-				}
-				else
-				{
-					timer1->Stop();
-					save_result();
-					Application::Exit();
-				}
-			}
-		}
-	private: System::Void button_next_Click(System::Object^ sender, System::EventArgs^ e)
-	{
-		questionTimer->Stop();
-		if (get_num_marks() == 0)
-		{
-			MessageBox::Show("Ви повинні обрати хоча б одну відповідь!", "Увага");
-			startQuestionTimer();
-			return;
-		}
+                    arraySize = num->Length;
+                    mas_data = gcnew array<int>(arraySize);
+                    for (int k = 0; k < arraySize; k++) Int32::TryParse(num[k], mas_data[k]);
+                    i = 0; j = 0; isSorted = false; swapped = false;
+                    drawPanel->Invalidate();
+                }
+            }
+        }
 
-		int selectedCount = 0;
-		if (checkBox1->Visible && checkBox1->Checked) selectedCount++;
-		if (checkBox2->Visible && checkBox2->Checked) selectedCount++;
-		if (checkBox3->Visible && checkBox3->Checked) selectedCount++;
-		if (checkBox4->Visible && checkBox4->Checked) selectedCount++;
-		if (checkBox5->Visible && checkBox5->Checked) selectedCount++;
+        System::Void save_file(Object^ sender, EventArgs^ e) {
+            if (mas_data == nullptr) return;
+            SaveFileDialog^ sfd = gcnew SaveFileDialog();
+            if (sfd->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
+                String^ res = "";
+                for (int k = 0; k < arraySize; k++) res += mas_data[k].ToString() + " ";
+                File::WriteAllText(sfd->FileName, res);
+            }
+        }
 
-		array<String^>^ selected = gcnew array<String^>(selectedCount);
-		int selectedIndex = 0;
-
-		if (checkBox1->Visible && checkBox1->Checked)
-			selected[selectedIndex++] = "A";
-		if (checkBox2->Visible && checkBox2->Checked)
-			selected[selectedIndex++] = "B";
-		if (checkBox3->Visible && checkBox3->Checked)
-			selected[selectedIndex++] = "C";
-		if (checkBox4->Visible && checkBox4->Checked)
-			selected[selectedIndex++] = "D";
-		if (checkBox5->Visible && checkBox5->Checked)
-			selected[selectedIndex++] = "E";
-		userAnswers[currentQuestion] = selected;
-
-		bool isCorrect = true;
-
-		for (int i = 0; i < selected->Length && isCorrect; i++)
-		{
-			bool found = false;
-			for (int j = 0; j < correctAnswers[currentQuestion]->Length && !found; j++)
-			{
-				if (correctAnswers[currentQuestion][j] == selected[i])
-				{
-					found = true;
-				}
-			}
-			if (!found)
-			{
-				isCorrect = false;
-			}
-		}
-
-		if (isCorrect && selected->Length != correctAnswers[currentQuestion]->Length)
-		{
-			isCorrect = false;
-		}
-
-		if (isCorrect)
-		{
-			correctCount++;
-		}
-
-		currentQuestion++;
-		if (currentQuestion < questions->Length)
-		{
-			startQuestionTimer();
-			if (checkBox6->Checked && isCorrect)
-			{
-				String^ result = String::Format("Відповідь правильна!");
-				MessageBox::Show(result, "Результат питання:", MessageBoxButtons::OK, MessageBoxIcon::Information);
-			}
-			else if (checkBox6->Checked && !isCorrect)
-			{
-				String^ result = String::Format("Відповідь неправильна!");
-				MessageBox::Show(result, "Результат питання:", MessageBoxButtons::OK, MessageBoxIcon::Information);
-			}
-			load_info();
-		}
-		else
-		{
-			timer1->Stop();
-			TimeSpan totalTime = System::DateTime::Now - startTime;
-			String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}",
-				(int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
-
-			String^ result = String::Format("Правильних відповідей: {0}/{1}\nЧас виконання: {2}", correctCount, questions->Length, timeStr);
-			MessageBox::Show(result, "Результат тесту", MessageBoxButtons::OK, MessageBoxIcon::Information);
-			save_result();
-			Application::Exit();
-		}
-	}
-
-		   void open_file()
-		   {
-			   String^ fileName = textBox_fileName->Text->Trim();
-			   if (String::IsNullOrEmpty(fileName) || !System::IO::File::Exists(fileName))
-			   {
-				   MessageBox::Show("Файл не знайдено! Будь ласка, оберіть правильний файл.", "Помилка");
-				   return;
-			   }
-			   array<String^>^ lines = System::IO::File::ReadAllLines(fileName, System::Text::Encoding::UTF8);
-
-			   array<String^>^ elements = lines[0]->Split(' ');
-			   count_q = Int32::Parse(elements[0]);
-			   number_img = Int32::Parse(elements[1]) - 1;
-
-
-			   questions = gcnew array<String^>(count_q);
-			   answers = gcnew array<array<String^>^>(count_q);
-			   correctAnswers = gcnew array<array<String^>^>(count_q);
-			   isMultipleChoice = gcnew array<bool>(count_q);
-
-			   int questionIndex = -1;
-			   array<String^>^ tempOptions = gcnew array<String^>(5);
-			   int optionCount = 0;
-
-			   for (int i = 2; i < lines->Length; i++)
-			   {
-				   if (String::IsNullOrEmpty(lines[i]))
-					   continue;
-
-				   char first_char = lines[i][0];
-				   if (first_char >= '0' && first_char <= '9')
-				   {
-					   questionIndex++;
-					   int dotIndex = lines[i]->IndexOf('.');
-					   if (dotIndex != -1 && dotIndex < lines[i]->Length - 1)
-					   {
-						   questions[questionIndex] = lines[i]->Substring(dotIndex + 1)->Trim();
-					   }
-					   else
-					   {
-						   questions[questionIndex] = lines[i];
-					   }
-					   optionCount = 0;
-				   }
-				   else if (first_char >= 'A' && first_char <= 'E' && lines[i][1] == '.')
-				   {
-					   tempOptions[optionCount] = lines[i];
-					   optionCount++;
-				   }
-				   else if (lines[i]->StartsWith("Correct"))
-				   {
-					   array<String^>^ finalOptions = gcnew array<String^>(optionCount);
-					   for (int j = 0; j < optionCount; j++)
-					   {
-						   finalOptions[j] = tempOptions[j];
-					   }
-					   answers[questionIndex] = finalOptions;
-
-					   String^ correctStr = lines[i]->Substring(9)->Trim();
-					   array<String^>^ correctLetters = correctStr->Split(' ');
-
-					   int correctCount = 0;
-
-					   for (int i = 0; i < correctLetters->Length; i++)
-					   {
-						   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
-						   {
-							   correctCount++;
-						   }
-					   }
-					   array<String^>^ finalCorrect = gcnew array<String^>(correctCount);
-					   int correctIndex = 0;
-					   for (int i = 0; i < correctLetters->Length; i++)
-					   {
-						   if (!String::IsNullOrEmpty(correctLetters[i]->Trim()))
-						   {
-							   finalCorrect[correctIndex] = correctLetters[i]->Trim();
-							   correctIndex++;
-						   }
-					   }
-
-					   correctAnswers[questionIndex] = finalCorrect;
-					   isMultipleChoice[questionIndex] = (correctCount > 1);
-				   }
-			   }
-		   }
-
-		   void load_info()
-		   {
-			
-			   label1->Text = String::Format("{0}. {1}", currentQuestion + 1, questions[currentQuestion]);
-			   array<String^>^ currentAnswers = answers[currentQuestion];
-			   int count = currentAnswers->Length;
-			   array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
-			   for (int i = 0; i < checkBoxes->Length; i++)
-			   {
-				   if (i < count)
-				   {
-					   checkBoxes[i]->Visible = true;
-					   checkBoxes[i]->Text = currentAnswers[i];
-				   }
-				   else
-				   {
-					   checkBoxes[i]->Visible = false;
-				   }
-				   checkBoxes[i]->Checked = false;
-			   }
-
-			   if (isMultipleChoice[currentQuestion])
-				   label2->Text = L"Можна обрати кілька відповідей";
-			   else
-				   label2->Text = L"Оберіть тільки одну відповідь";
-
-			   if (currentQuestion == number_img)
-			   {
-				   pictureBox1->Load("Image20251130161027.jpg");
-				   pictureBox1->Visible = true;
-			   }
-			   else
-			   {
-				   pictureBox1->Visible = false;
-			   }
-			   load_answers();
-		   }
-
-
-	private: System::Void button1_Click(System::Object^ sender, System::EventArgs^ e)
-	{
-		userName = textBox1->Text->Trim();
-		start_panel->Visible = false;
-		flowLayoutPanel1->Visible = true;
-		label1->Visible = true;
-		label2->Visible = true;
-		button_next->Visible = true;
-		button_back->Visible = true;
-
-		startTime = System::DateTime::Now;
-		timer1->Start();
-		startQuestionTimer();
-		load_info();
-	}
-
-	private: void check(System::Object^ sender)
-	{
-		CheckBox^ currentCheckBox = safe_cast<CheckBox^>(sender);
-		if (isMultipleChoice[currentQuestion] || !currentCheckBox->Checked)
-		{
-			return;
-		}
-		int count = get_num_marks();
-		if (count == 1)
-		{
-			return;
-		}
-		else
-		{
-			currentCheckBox->Checked = false;
-			MessageBox::Show("Можна вибрати лише одну відповідь!", "Увага");
-		}
-	}
-
-	private: System::Void checkBox1_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
-	{
-		check(sender);
-	}
-	private: System::Void checkBox2_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
-	{
-		check(sender);
-	}
-	private: System::Void checkBox3_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
-	{
-		check(sender);
-	}
-	private: System::Void checkBox4_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
-	{
-		check(sender);
-	}
-	private: System::Void checkBox5_CheckedChanged(System::Object^ sender, System::EventArgs^ e)
-	{
-		check(sender);
-	}
-
-		   void save_result()
-		   {
-			   System::IO::StreamWriter^ writer = gcnew System::IO::StreamWriter("results.txt", true, System::Text::Encoding::UTF8);
-
-			   TimeSpan totalTime = System::DateTime::Now - startTime;
-			   String^ timeStr = String::Format("{0:D2}:{1:D2}:{2:D2}", (int)totalTime.TotalHours, totalTime.Minutes, totalTime.Seconds);
-
-			   String^ timestamp = System::DateTime::Now.ToString("dd.MM.yyyy HH:mm:ss");
-			   String^ result = String::Format("{0} - {1}: {2}/{3} - Час: {4}", timestamp, userName, correctCount, questions->Length, timeStr);
-
-			   writer->WriteLine(result);
-			   writer->Close();
-		   }
-
-	private: System::Void label3_Click(System::Object^ sender, System::EventArgs^ e) {}
-
-
-		   void shuffle() {
-			   System::Random^ rnd = gcnew System::Random();
-			   for (int i = 0; i <= 20; i++)
-			   {
-				   int ind1, ind2;
-				   ind1 = rnd->Next(0, 6);
-				   ind2 = rnd->Next(0, 6);
-
-				   if (number_img == ind1)
-					   number_img = ind2;
-				   else if (number_img == ind2)
-					   number_img = ind1;
-
-				  
-				   String^ line = questions[ind1];
-				   questions[ind1] = questions[ind2];
-				   questions[ind2] = line;
-
-				   auto tmp1 = answers[ind1];
-				   answers[ind1] = answers[ind2];
-				   answers[ind2] = tmp1;
-
-				   auto tmp2 = correctAnswers[ind1];
-				   correctAnswers[ind1] = correctAnswers[ind2];
-				   correctAnswers[ind2] = tmp2;
-
-				   bool tmp3 = isMultipleChoice[ind1];
-				   isMultipleChoice[ind1] = isMultipleChoice[ind2];
-				   isMultipleChoice[ind2] = tmp3;
-			   }
-		   }
-
-
-	private: System::Void button_back_Click(System::Object^ sender, System::EventArgs^ e) {
-		if (currentQuestion > 0)
-		{
-			currentQuestion -= 1;
-			load_info();
-			load_answers();
-		}
-	}
-
-	private: void load_answers() {
-		array<CheckBox^>^ checkBoxes = { checkBox1, checkBox2, checkBox3, checkBox4, checkBox5 };
-		for (int i = 0; i < checkBoxes->Length; i++)
-		{
-			checkBoxes[i]->Checked = false;
-		}
-
-		if (userAnswers[currentQuestion] != nullptr)
-		{
-			for (int i = 0; i < userAnswers[currentQuestion]->Length; i++)
-			{
-				String^ answer = userAnswers[currentQuestion][i];
-				if (answer == "A") checkBox1->Checked = true;
-				else if (answer == "B") checkBox2->Checked = true;
-				else if (answer == "C") checkBox3->Checked = true;
-				else if (answer == "D") checkBox4->Checked = true;
-				else if (answer == "E") checkBox5->Checked = true;
-			}
-		}
-	}
-
-
-	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
-		TimeSpan elapsed = System::DateTime::Now - startTime;
-		label_timer->Text = String::Format("Час: {0:D2}:{1:D2}:{2:D2}", (int)elapsed.TotalHours, elapsed.Minutes, elapsed.Seconds);
-	}
-
-	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
-		if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-		{
-			textBox_fileName->Text = openFileDialog1->FileName;
-		}
-	}
-
-	};
-	
-
-
+        System::Void Form_Resize(Object^ sender, EventArgs^ e) {
+            if (startPanel->Visible) CenterStartElements(nullptr, nullptr);
+            drawPanel->Invalidate();
+        }
+    };
 }
-
-// Основний файл
-
