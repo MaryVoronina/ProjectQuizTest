@@ -1,344 +1,274 @@
 #pragma once
 
+#include <cmath>
+
 namespace ProjectQuizTest
 {
     using namespace System;
     using namespace System::ComponentModel;
-    using namespace System::Collections;
+    using namespace System::Collections::Generic;
     using namespace System::Windows::Forms;
-    using namespace System::Data;
     using namespace System::Drawing;
-    using namespace System::IO;
+
+    public ref class Vertex
+    {
+    public:
+        Point Position;
+        Vertex(Point p) 
+        { 
+            Position = p; 
+        }
+    };
+
+    public ref class Edge
+    {
+    public:
+        Vertex^ StartVertex;
+        Vertex^ EndVertex;
+        Edge(Vertex^ start, Vertex^ end) 
+        { 
+            StartVertex = start; 
+            EndVertex = end; 
+        }
+    };
 
     public ref class quiz : public System::Windows::Forms::Form
     {
     private:
-        array<int>^ mas_data;
-        int arraySize, i, j;
-        bool isSorted, swapped, isSpeedSelected;
-        int MAX_VALUE;
+        List<Vertex^>^ vertexList;
+        List<Edge^>^ edgeList;
+        Vertex^ selectedVertex;
 
-        System::Windows::Forms::Panel^ drawPanel;
-        System::Windows::Forms::Button^ button_next;
-        System::Windows::Forms::Button^ button_auto;
-        System::Windows::Forms::Timer^ sortTimer;
-        System::Windows::Forms::MenuStrip^ menuStrip1;
+        int globalVertexRadius = 15;
+        Color globalVertexColor = Color::SkyBlue;
+        Color globalEdgeColor = Color::Black;
 
-        System::Windows::Forms::ToolStripMenuItem^ menuFile, ^ openItem, ^ saveItem, ^ randomItem;
-        System::Windows::Forms::ToolStripMenuItem^ menuSpeed, ^ slowItem, ^ medItem, ^ fastItem;
-
-        System::Windows::Forms::Panel^ startPanel;
-        System::Windows::Forms::Button^ btnStartProject;
-        System::Windows::Forms::Label^ lblWelcome;
+        System::Windows::Forms::Panel^ drawingCanvas;
+        System::Windows::Forms::Button^ btnResetCanvas;
+        System::Windows::Forms::Panel^ settingsPanel;
+        System::Windows::Forms::Button^ btnConfirmSettings;
+        System::Windows::Forms::Label^ lblTitle;
+        System::Windows::Forms::NumericUpDown^ inputRadius;
+        System::Windows::Forms::Button^ btnSelectVertexColor;
+        System::Windows::Forms::Button^ btnSelectEdgeColor;
+        System::Windows::Forms::Label^ lblRadiusText;
 
     public:
         quiz(void)
         {
             InitializeComponent();
-            MAX_VALUE = 100;
-            mas_data = nullptr;
-            isSorted = true;
-            swapped = false;
-            isSpeedSelected = false;
+            vertexList = gcnew List<Vertex^>();
+            edgeList = gcnew List<Edge^>();
+            selectedVertex = nullptr;
         }
 
     private:
         void InitializeComponent(void)
         {
             this->components = (gcnew System::ComponentModel::Container());
-            this->sortTimer = (gcnew System::Windows::Forms::Timer(this->components));
-            this->menuStrip1 = (gcnew System::Windows::Forms::MenuStrip());
+            this->drawingCanvas = (gcnew System::Windows::Forms::Panel());
+            this->btnResetCanvas = (gcnew System::Windows::Forms::Button());
 
-            this->menuFile = (gcnew System::Windows::Forms::ToolStripMenuItem(L"File"));
-            this->openItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Open"));
-            this->saveItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Save"));
-            this->randomItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Randomize"));
+            this->drawingCanvas->BackColor = Color::White;
+            this->drawingCanvas->BorderStyle = BorderStyle::FixedSingle;
+            this->drawingCanvas->Location = Point(20, 20);
+            this->drawingCanvas->Size = System::Drawing::Size(740, 400);
+            this->drawingCanvas->Anchor = (AnchorStyles)(AnchorStyles::Top | AnchorStyles::Bottom | AnchorStyles::Left | AnchorStyles::Right);
+            this->drawingCanvas->Paint += gcnew PaintEventHandler(this, &quiz::OnCanvasPaint);
+            this->drawingCanvas->MouseDown += gcnew MouseEventHandler(this, &quiz::OnCanvasMouseDown);
 
-            this->menuSpeed = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Speed"));
-            this->slowItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Slow (600ms)"));
-            this->medItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Medium (300ms)"));
-            this->fastItem = (gcnew System::Windows::Forms::ToolStripMenuItem(L"Fast (50ms)"));
+            this->btnResetCanvas->Text = L"Clear Canvas";
+            this->btnResetCanvas->Location = Point(20, 440);
+            this->btnResetCanvas->Size = System::Drawing::Size(150, 35);
+            this->btnResetCanvas->Anchor = (AnchorStyles)(AnchorStyles::Bottom | AnchorStyles::Left);
+            this->btnResetCanvas->Click += gcnew EventHandler(this, &quiz::OnResetClick);
 
-            this->drawPanel = (gcnew System::Windows::Forms::Panel());
-            this->button_next = (gcnew System::Windows::Forms::Button());
-            this->button_auto = (gcnew System::Windows::Forms::Button());
+            this->settingsPanel = (gcnew System::Windows::Forms::Panel());
+            this->settingsPanel->Dock = DockStyle::Fill;
+            this->settingsPanel->BackColor = Color::FromArgb(240, 240, 240);
 
-            this->sortTimer->Interval = 100;
-            this->sortTimer->Tick += gcnew System::EventHandler(this, &quiz::OnTimerTick);
+            this->lblTitle = (gcnew System::Windows::Forms::Label());
+            this->lblTitle->Text = L"Graph Visualization Settings";
+            this->lblTitle->Font = (gcnew System::Drawing::Font(L"Segoe UI", 18, FontStyle::Bold));
+            this->lblTitle->AutoSize = true;
 
-            this->menuStrip1->Items->AddRange(gcnew array<ToolStripItem^>{menuFile, menuSpeed});
-            this->menuFile->DropDownItems->AddRange(gcnew array<ToolStripItem^>{openItem, saveItem, randomItem});
-            this->menuSpeed->DropDownItems->AddRange(gcnew array<ToolStripItem^>{slowItem, medItem, fastItem});
-            this->menuStrip1->Visible = false;
+            this->lblRadiusText = (gcnew System::Windows::Forms::Label());
+            this->lblRadiusText->Text = L"Vertex Radius:";
+            this->lblRadiusText->AutoSize = true;
 
-            this->openItem->Click += gcnew EventHandler(this, &quiz::open_file);
-            this->saveItem->Click += gcnew EventHandler(this, &quiz::save_file);
-            this->randomItem->Click += gcnew EventHandler(this, &quiz::button_reset_Click);
+            this->inputRadius = (gcnew System::Windows::Forms::NumericUpDown());
+            this->inputRadius->Minimum = 5;
+            this->inputRadius->Maximum = 50;
+            this->inputRadius->Value = 15;
 
-            this->slowItem->Click += gcnew EventHandler(this, &quiz::SetSpeedSlow);
-            this->medItem->Click += gcnew EventHandler(this, &quiz::SetSpeedMed);
-            this->fastItem->Click += gcnew EventHandler(this, &quiz::SetSpeedFast);
+            this->btnSelectVertexColor = (gcnew System::Windows::Forms::Button());
+            this->btnSelectVertexColor->Text = L"Vertex Color";
+            this->btnSelectVertexColor->BackColor = Color::SkyBlue;
+            this->btnSelectVertexColor->Click += gcnew EventHandler(this, &quiz::OnPickVertexColor);
 
-            this->drawPanel->BackColor = Color::White;
-            this->drawPanel->BorderStyle = BorderStyle::FixedSingle;
-            this->drawPanel->Location = Point(20, 40);
-            this->drawPanel->Size = System::Drawing::Size(740, 400);
-            this->drawPanel->Anchor = (AnchorStyles)(AnchorStyles::Top | AnchorStyles::Bottom | AnchorStyles::Left | AnchorStyles::Right);
-            this->drawPanel->Paint += gcnew PaintEventHandler(this, &quiz::drawPanel_Paint);
+            this->btnSelectEdgeColor = (gcnew System::Windows::Forms::Button());
+            this->btnSelectEdgeColor->Text = L"Edge Color";
+            this->btnSelectEdgeColor->BackColor = Color::Black;
+            this->btnSelectEdgeColor->ForeColor = Color::White;
+            this->btnSelectEdgeColor->Click += gcnew EventHandler(this, &quiz::OnPickEdgeColor);
 
-            this->button_next->Text = L"Next Step";
-            this->button_next->Location = Point(20, 460);
-            this->button_next->Size = System::Drawing::Size(180, 40);
-            this->button_next->Anchor = (AnchorStyles)(AnchorStyles::Bottom | AnchorStyles::Left);
-            this->button_next->Click += gcnew EventHandler(this, &quiz::button_next_Click);
+            this->btnConfirmSettings = (gcnew System::Windows::Forms::Button());
+            this->btnConfirmSettings->Text = L"START DRAWING";
+            this->btnConfirmSettings->Font = (gcnew System::Drawing::Font(L"Segoe UI", 12, FontStyle::Bold));
+            this->btnConfirmSettings->Size = System::Drawing::Size(200, 50);
+            this->btnConfirmSettings->Click += gcnew EventHandler(this, &quiz::OnStartDrawingClick);
 
-            this->button_auto->Text = L"Auto Sort";
-            this->button_auto->Location = Point(210, 460);
-            this->button_auto->Size = System::Drawing::Size(180, 40);
-            this->button_auto->Anchor = (AnchorStyles)(AnchorStyles::Bottom | AnchorStyles::Left);
-            this->button_auto->Click += gcnew EventHandler(this, &quiz::button_auto_Click);
+            this->settingsPanel->Controls->Add(lblTitle);
+            this->settingsPanel->Controls->Add(lblRadiusText);
+            this->settingsPanel->Controls->Add(inputRadius);
+            this->settingsPanel->Controls->Add(btnSelectVertexColor);
+            this->settingsPanel->Controls->Add(btnSelectEdgeColor);
+            this->settingsPanel->Controls->Add(btnConfirmSettings);
+            this->settingsPanel->Layout += gcnew LayoutEventHandler(this, &quiz::ArrangeSettingsLayout);
 
-            this->startPanel = (gcnew System::Windows::Forms::Panel());
-            this->startPanel->Dock = DockStyle::Fill;
-            this->startPanel->BackColor = Color::White;
+            this->ClientSize = System::Drawing::Size(800, 500);
+            this->MinimumSize = System::Drawing::Size(500, 450);
+            this->Controls->Add(this->settingsPanel);
+            this->Controls->Add(this->drawingCanvas);
+            this->Controls->Add(this->btnResetCanvas);
 
-            this->lblWelcome = (gcnew System::Windows::Forms::Label());
-            this->lblWelcome->Text = L"Bubble Sort Visualizer";
-            this->lblWelcome->Font = (gcnew System::Drawing::Font(L"Segoe UI", 24, FontStyle::Bold));
-            this->lblWelcome->AutoSize = true;
-
-            this->btnStartProject = (gcnew System::Windows::Forms::Button());
-            this->btnStartProject->Text = L"START";
-            this->btnStartProject->Font = (gcnew System::Drawing::Font(L"Segoe UI", 14, FontStyle::Bold));
-            this->btnStartProject->Size = System::Drawing::Size(200, 60);
-            this->btnStartProject->Click += gcnew EventHandler(this, &quiz::OnStartBtnClick);
-
-            this->startPanel->Controls->Add(lblWelcome);
-            this->startPanel->Controls->Add(btnStartProject);
-            this->startPanel->Layout += gcnew LayoutEventHandler(this, &quiz::CenterStartElements);
-
-            this->ClientSize = System::Drawing::Size(800, 520);
-            this->Controls->Add(this->startPanel);
-            this->Controls->Add(this->drawPanel);
-            this->Controls->Add(this->button_next);
-            this->Controls->Add(this->button_auto);
-            this->Controls->Add(this->menuStrip1);
-            this->MainMenuStrip = this->menuStrip1;
-            this->Text = L"Sorting Visualizer";
+            this->Text = L"Graph Designer Pro";
             this->StartPosition = FormStartPosition::CenterScreen;
-            this->Resize += gcnew EventHandler(this, &quiz::Form_Resize);
         }
 
-        void SetSpeedSlow(Object^ sender, EventArgs^ e) 
-        { 
-            this->sortTimer->Interval = 600; 
-            isSpeedSelected = true; 
-        }
-        void SetSpeedMed(Object^ sender, EventArgs^ e) 
-        { 
-            this->sortTimer->Interval = 300; 
-            isSpeedSelected = true; 
-        }
-        void SetSpeedFast(Object^ sender, EventArgs^ e) 
-        { 
-            this->sortTimer->Interval = 50; 
-            isSpeedSelected = true;
-        }
-
-        void OnTimerTick(Object^ sender, EventArgs^ e)
+        void ArrangeSettingsLayout(Object^ sender, LayoutEventArgs^ e)
         {
-            if (mas_data != nullptr && !isSorted)
+            int centerX = settingsPanel->Width / 2;
+            int centerY = settingsPanel->Height / 2;
+            lblTitle->Location = Point(centerX - lblTitle->Width / 2, centerY - 150);
+            lblRadiusText->Location = Point(centerX - 90, centerY - 60);
+            inputRadius->Location = Point(centerX + 30, centerY - 62);
+            btnSelectVertexColor->Size = System::Drawing::Size(160, 35);
+            btnSelectVertexColor->Location = Point(centerX - 80, centerY - 10);
+            btnSelectEdgeColor->Size = System::Drawing::Size(160, 35);
+            btnSelectEdgeColor->Location = Point(centerX - 80, centerY + 35);
+            btnConfirmSettings->Location = Point(centerX - 100, centerY + 100);
+        }
+
+        void OnPickVertexColor(Object^ sender, EventArgs^ e) 
+        {
+            ColorDialog^ dialog = gcnew ColorDialog();
+            if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
             {
-                perform_step();
-                drawPanel->Invalidate();
+                globalVertexColor = dialog->Color;
+                btnSelectVertexColor->BackColor = dialog->Color;
             }
-            else sortTimer->Stop(); 
         }
 
-        void CenterStartElements(Object^ sender, LayoutEventArgs^ e)
+        void OnPickEdgeColor(Object^ sender, EventArgs^ e) 
         {
-            lblWelcome->Location = Point((startPanel->Width - lblWelcome->Width) / 2, (startPanel->Height / 2) - 80);
-            btnStartProject->Location = Point((startPanel->Width - btnStartProject->Width) / 2, (startPanel->Height / 2) + 20);
-        }
-
-        void OnStartBtnClick(Object^ sender, EventArgs^ e)
-        {
-            this->startPanel->Visible = false;
-            this->menuStrip1->Visible = true;
-            mas_data = nullptr;
-            arraySize = 0;
-            isSorted = true;
-            isSpeedSelected = false;
-            this->drawPanel->Invalidate();
-        }
-
-        void perform_step()
-        {
-            if (i < arraySize - 1)
+            ColorDialog^ dialog = gcnew ColorDialog();
+            if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
             {
-                if (j < arraySize - i - 1)
+                globalEdgeColor = dialog->Color;
+                btnSelectEdgeColor->BackColor = dialog->Color;
+            }
+        }
+
+        void OnStartDrawingClick(Object^ sender, EventArgs^ e)
+        {
+            globalVertexRadius = (int)inputRadius->Value;
+            this->settingsPanel->Visible = false;
+        }
+
+        void OnCanvasMouseDown(Object^ sender, MouseEventArgs^ e)
+        {
+            Vertex^ targetVertex = nullptr;
+            bool isSpaceOccupied = false;
+            double safetyMargin = 50.0;
+
+            for (int i = 0; i < vertexList->Count; i++)
+            {
+                Vertex^ v = vertexList[i];
+                double distance = Math::Sqrt(Math::Pow(v->Position.X - e->X, 2) + Math::Pow(v->Position.Y - e->Y, 2));
+
+                if (distance < globalVertexRadius + 5)
                 {
-                    if (mas_data[j] > mas_data[j + 1])
+                    targetVertex = v;
+                    break;
+                }
+                if (distance < safetyMargin) isSpaceOccupied = true;
+            }
+
+            if (e->Button == System::Windows::Forms::MouseButtons::Right)
+            {
+                if (targetVertex != nullptr)
+                {
+                    for (int i = edgeList->Count - 1; i >= 0; i--)
                     {
-                        int tmp = mas_data[j];
-                        mas_data[j] = mas_data[j + 1];
-                        mas_data[j + 1] = tmp;
-                        swapped = true;
+                        if (edgeList[i]->StartVertex == targetVertex || edgeList[i]->EndVertex == targetVertex)
+                        {
+                            edgeList->RemoveAt(i);
+                        }
                     }
-                    j++;
+                    vertexList->Remove(targetVertex);
+                    if (selectedVertex == targetVertex) selectedVertex = nullptr;
+                }
+            }
+            else if (e->Button == System::Windows::Forms::MouseButtons::Left)
+            {
+                if (targetVertex == nullptr)
+                {
+                    if (!isSpaceOccupied)
+                    {
+                        vertexList->Add(gcnew Vertex(e->Location));
+                        selectedVertex = nullptr;
+                    }
                 }
                 else
                 {
-                    if (!swapped) 
-                    { 
-                        finish_sorting(); 
-                        return; 
+                    if (selectedVertex == nullptr) selectedVertex = targetVertex;
+                    else if (selectedVertex != targetVertex)
+                    {
+                        edgeList->Add(gcnew Edge(selectedVertex, targetVertex));
+                        selectedVertex = nullptr;
                     }
-                    j = 0; 
-                    i++;
-                    swapped = false;
+                    else selectedVertex = nullptr;
                 }
             }
-            else finish_sorting();
+            drawingCanvas->Invalidate();
         }
 
-        void finish_sorting()
+        void OnCanvasPaint(Object^ sender, PaintEventArgs^ e)
         {
-            sortTimer->Stop();
-            isSorted = true;
-            i = arraySize;
-            j = -1;
-            this->drawPanel->Invalidate();
-            MessageBox::Show("Sorting complete!", "Done");
-        }
+            Graphics^ graphics = e->Graphics;
+            graphics->SmoothingMode = System::Drawing::Drawing2D::SmoothingMode::AntiAlias;
 
-        System::Void button_next_Click(Object^ sender, EventArgs^ e)
-        {
-            sortTimer->Stop();
-            if (mas_data == nullptr) 
+            Pen^ linePen = gcnew Pen(globalEdgeColor, 2);
+            for (int i = 0; i < edgeList->Count; i++)
             {
-                MessageBox::Show("Select or generate an array!", "Error");
-                return;
+                graphics->DrawLine(linePen, edgeList[i]->StartVertex->Position, edgeList[i]->EndVertex->Position);
             }
-            if (!isSorted)
+
+            for (int i = 0; i < vertexList->Count; i++)
             {
-                perform_step();
-                drawPanel->Invalidate();
+                Vertex^ currentVertex = vertexList[i];
+                Brush^ fillBrush = (currentVertex == selectedVertex) ? Brushes::Red : gcnew SolidBrush(globalVertexColor);
+
+                int diameter = globalVertexRadius * 2;
+                Rectangle drawRect(currentVertex->Position.X - globalVertexRadius, currentVertex->Position.Y - globalVertexRadius, diameter, diameter);
+
+                graphics->FillEllipse(fillBrush, drawRect);
+                graphics->DrawEllipse(Pens::Black, drawRect);
+
+                String^ label = (i + 1).ToString();
+                System::Drawing::Font^ textFont = gcnew System::Drawing::Font("Segoe UI", (float)(globalVertexRadius * 0.7 + 3), FontStyle::Bold);
+                SizeF textSize = graphics->MeasureString(label, textFont);
+                graphics->DrawString(label, textFont, Brushes::Black, currentVertex->Position.X - textSize.Width / 2, currentVertex->Position.Y - textSize.Height / 2);
             }
         }
 
-        System::Void button_auto_Click(Object^ sender, EventArgs^ e)
+        void OnResetClick(Object^ sender, EventArgs^ e)
         {
-            if (mas_data == nullptr) {
-                MessageBox::Show("Please select an array!", "Warning");
-                return;
-            }
-            if (!isSpeedSelected) {
-                MessageBox::Show("Please choose a speed!", "Warning");
-                return;
-            }
-
-            if (!isSorted) sortTimer->Start(); 
-        }
-
-        System::Void button_reset_Click(Object^ sender, EventArgs^ e)
-        {
-            sortTimer->Stop();
-            Random^ rnd = gcnew Random();
-            arraySize = rnd->Next(5, 15);
-            mas_data = gcnew array<int>(arraySize);
-            for (int k = 0; k < arraySize; k++) 
-            { 
-                mas_data[k] = rnd->Next(5, MAX_VALUE); 
-            }
-            i = 0; 
-            j = 0; 
-            isSorted = false; 
-            swapped = false;
-            drawPanel->Invalidate();
-        }
-
-        System::Void drawPanel_Paint(Object^ sender, PaintEventArgs^ e)
-        {
-            Graphics^ g = e->Graphics;
-            if (mas_data == nullptr) return;
-            float barSpacing = (float)drawPanel->Width / arraySize;
-            float barWidth = barSpacing * 0.75f;
-            int maxValue = 1;
-            for (int k = 0; k < arraySize; k++) { if (mas_data[k] > maxValue) maxValue = mas_data[k]; }
-
-            for (int k = 0; k < arraySize; k++)
-            {
-                int bh = (int)((mas_data[k] / (float)maxValue) * (drawPanel->Height - 75));
-                float x = k * barSpacing + (barSpacing - barWidth) / 2;
-                float y = drawPanel->Height - bh - 25;
-
-                Brush^ barBrush;
-                if (isSorted || k >= arraySize - i) 
-                { 
-                    barBrush = Brushes::LightGreen; 
-                }
-                else if (k == j || k == j + 1) 
-                { 
-                    barBrush = Brushes::LightPink; 
-                }
-                else 
-                { 
-                    barBrush = Brushes::SkyBlue; 
-                }
-
-                g->FillRectangle(barBrush, x, y, barWidth, (float)bh);
-                g->DrawRectangle(Pens::Black, x, y, barWidth, (float)bh);
-                g->DrawString(mas_data[k].ToString(), gcnew System::Drawing::Font("Arial", 9, FontStyle::Bold), Brushes::Black, x, y - 20);
-            }
-        }
-
-        System::Void open_file(Object^ sender, EventArgs^ e)
-        {
-            sortTimer->Stop();
-            OpenFileDialog^ ofd = gcnew OpenFileDialog();
-            if (ofd->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-            {
-                String^ content = File::ReadAllText(ofd->FileName);
-                array<String^>^ num = content->Split(gcnew array<Char>{' ', '\n', '\r', '\t', ','}, StringSplitOptions::RemoveEmptyEntries);
-                if (num->Length > 0)
-                {
-                    arraySize = num->Length;
-                    mas_data = gcnew array<int>(arraySize);
-                    for (int k = 0; k < arraySize; k++) 
-                    { 
-                        Int32::TryParse(num[k], mas_data[k]); 
-                    }
-                    i = 0; 
-                    j = 0; 
-                    isSorted = false; 
-                    swapped = false;
-                    drawPanel->Invalidate();
-                }
-            }
-        }
-
-        System::Void save_file(Object^ sender, EventArgs^ e)
-        {
-            if (mas_data == nullptr) return;
-            SaveFileDialog^ sfd = gcnew SaveFileDialog();
-            if (sfd->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-            {
-                String^ res = "";
-                for (int k = 0; k < arraySize; k++)
-                {
-                    res += mas_data[k].ToString() + " ";
-                }
-                    
-                File::WriteAllText(sfd->FileName, res);
-            }
-        }
-
-        System::Void Form_Resize(Object^ sender, EventArgs^ e)
-        {
-            if (startPanel->Visible) 
-                CenterStartElements(nullptr, nullptr);
-            drawPanel->Invalidate();
+            vertexList->Clear();
+            edgeList->Clear();
+            selectedVertex = nullptr;
+            drawingCanvas->Invalidate();
         }
 
     private:
