@@ -9,26 +9,23 @@ namespace ProjectQuizTest
     using namespace System::Collections::Generic;
     using namespace System::Windows::Forms;
     using namespace System::Drawing;
+    using namespace System::Drawing::Drawing2D;
 
-    public ref class Vertex
-    {
+    public ref class Vertex {
     public:
         Point Position;
-        Vertex(Point p) 
-        { 
-            Position = p; 
-        }
+        Vertex(Point p) { Position = p; }
     };
 
-    public ref class Edge
-    {
+    public ref class Edge {
     public:
         Vertex^ StartVertex;
         Vertex^ EndVertex;
-        Edge(Vertex^ start, Vertex^ end) 
-        { 
-            StartVertex = start; 
-            EndVertex = end; 
+        int Weight;
+        Edge(Vertex^ start, Vertex^ end, int weight) {
+            StartVertex = start;
+            EndVertex = end;
+            Weight = weight;
         }
     };
 
@@ -38,24 +35,24 @@ namespace ProjectQuizTest
         List<Vertex^>^ vertexList;
         List<Edge^>^ edgeList;
         Vertex^ selectedVertex;
+        Vertex^ draggedVertex;
+        bool isDragging = false;
 
+        bool isDirected = false;
+        bool isWeighted = false;
         int globalVertexRadius = 15;
         Color globalVertexColor = Color::SkyBlue;
         Color globalEdgeColor = Color::Black;
 
-        System::Windows::Forms::Panel^ drawingCanvas;
-        System::Windows::Forms::Button^ btnResetCanvas;
-        System::Windows::Forms::Panel^ settingsPanel;
-        System::Windows::Forms::Button^ btnConfirmSettings;
-        System::Windows::Forms::Label^ lblTitle;
-        System::Windows::Forms::NumericUpDown^ inputRadius;
-        System::Windows::Forms::Button^ btnSelectVertexColor;
-        System::Windows::Forms::Button^ btnSelectEdgeColor;
-        System::Windows::Forms::Label^ lblRadiusText;
+        Panel^ drawingCanvas;
+        MenuStrip^ mainMenu;
+        ToolStripMenuItem^ itemDirected;
+        ToolStripMenuItem^ itemWeighted;
+        Label^ lblResult;
+        NumericUpDown^ inputRadius;
 
     public:
-        quiz(void)
-        {
+        quiz(void) {
             InitializeComponent();
             vertexList = gcnew List<Vertex^>();
             edgeList = gcnew List<Edge^>();
@@ -63,215 +60,345 @@ namespace ProjectQuizTest
         }
 
     private:
-        void InitializeComponent(void)
-        {
-            this->components = (gcnew System::ComponentModel::Container());
-            this->drawingCanvas = (gcnew System::Windows::Forms::Panel());
-            this->btnResetCanvas = (gcnew System::Windows::Forms::Button());
+        void InitializeComponent(void) {
+            //this->Text = L"Graph Designer - Euler Path Finder";
+            this->Size = System::Drawing::Size(1000, 750);
+            this->StartPosition = FormStartPosition::CenterScreen;
+            this->BackColor = Color::FromArgb(240, 240, 240);
 
+            this->mainMenu = (gcnew MenuStrip());
+            ToolStripMenuItem^ menuSettings = (gcnew ToolStripMenuItem(L"Settings"));
+
+            this->itemDirected = (gcnew ToolStripMenuItem(L"Directed Mode", nullptr, gcnew EventHandler(this, &quiz::OnToggleSettings)));
+            this->itemDirected->CheckOnClick = true;
+            this->itemWeighted = (gcnew ToolStripMenuItem(L"Weighted Mode", nullptr, gcnew EventHandler(this, &quiz::OnToggleSettings)));
+            this->itemWeighted->CheckOnClick = true;
+
+            ToolStripMenuItem^ itemVertexColor = (gcnew ToolStripMenuItem(L"Vertex Color", nullptr, gcnew EventHandler(this, &quiz::OnPickVertexColor)));
+            ToolStripMenuItem^ itemEdgeColor = (gcnew ToolStripMenuItem(L"Edge Color", nullptr, gcnew EventHandler(this, &quiz::OnPickEdgeColor)));
+
+            menuSettings->DropDownItems->Add(this->itemDirected);
+            menuSettings->DropDownItems->Add(this->itemWeighted);
+            menuSettings->DropDownItems->Add(gcnew ToolStripSeparator());
+            menuSettings->DropDownItems->Add(itemVertexColor);
+            menuSettings->DropDownItems->Add(itemEdgeColor);
+            this->mainMenu->Items->Add(menuSettings);
+            this->Controls->Add(this->mainMenu);
+
+
+            Panel^ centerContainer = gcnew Panel();
+            centerContainer->Size = System::Drawing::Size(860, 620);
+            centerContainer->Location = Point((this->ClientSize.Width - 860) / 2, 40);
+            this->Controls->Add(centerContainer);
+
+            this->drawingCanvas = (gcnew Panel());
+            this->drawingCanvas->Size = System::Drawing::Size(840, 480);
+            this->drawingCanvas->Location = Point(10, 0);
             this->drawingCanvas->BackColor = Color::White;
             this->drawingCanvas->BorderStyle = BorderStyle::FixedSingle;
-            this->drawingCanvas->Location = Point(20, 20);
-            this->drawingCanvas->Size = System::Drawing::Size(740, 400);
-            this->drawingCanvas->Anchor = (AnchorStyles)(AnchorStyles::Top | AnchorStyles::Bottom | AnchorStyles::Left | AnchorStyles::Right);
             this->drawingCanvas->Paint += gcnew PaintEventHandler(this, &quiz::OnCanvasPaint);
             this->drawingCanvas->MouseDown += gcnew MouseEventHandler(this, &quiz::OnCanvasMouseDown);
+            this->drawingCanvas->MouseMove += gcnew MouseEventHandler(this, &quiz::OnCanvasMouseMove);
+            this->drawingCanvas->MouseUp += gcnew MouseEventHandler(this, &quiz::OnCanvasMouseUp);
+            centerContainer->Controls->Add(this->drawingCanvas);
 
-            this->btnResetCanvas->Text = L"Clear Canvas";
-            this->btnResetCanvas->Location = Point(20, 440);
-            this->btnResetCanvas->Size = System::Drawing::Size(150, 35);
-            this->btnResetCanvas->Anchor = (AnchorStyles)(AnchorStyles::Bottom | AnchorStyles::Left);
-            this->btnResetCanvas->Click += gcnew EventHandler(this, &quiz::OnResetClick);
+ 
+            Panel^ controlsPanel = gcnew Panel();
+            controlsPanel->Size = System::Drawing::Size(840, 100);
+            controlsPanel->Location = Point(10, 490);
+            centerContainer->Controls->Add(controlsPanel);
 
-            this->settingsPanel = (gcnew System::Windows::Forms::Panel());
-            this->settingsPanel->Dock = DockStyle::Fill;
-            this->settingsPanel->BackColor = Color::FromArgb(240, 240, 240);
-
-            this->lblTitle = (gcnew System::Windows::Forms::Label());
-            this->lblTitle->Text = L"Graph Visualization Settings";
-            this->lblTitle->Font = (gcnew System::Drawing::Font(L"Segoe UI", 18, FontStyle::Bold));
-            this->lblTitle->AutoSize = true;
-
-            this->lblRadiusText = (gcnew System::Windows::Forms::Label());
-            this->lblRadiusText->Text = L"Vertex Radius:";
-            this->lblRadiusText->AutoSize = true;
-
-            this->inputRadius = (gcnew System::Windows::Forms::NumericUpDown());
-            this->inputRadius->Minimum = 5;
-            this->inputRadius->Maximum = 50;
+            this->inputRadius = gcnew NumericUpDown();
+            this->inputRadius->Location = Point(100, 13);
             this->inputRadius->Value = 15;
+            this->inputRadius->ValueChanged += gcnew EventHandler(this, &quiz::OnToggleSettings);
+            controlsPanel->Controls->Add(this->inputRadius);
 
-            this->btnSelectVertexColor = (gcnew System::Windows::Forms::Button());
-            this->btnSelectVertexColor->Text = L"Vertex Color";
-            this->btnSelectVertexColor->BackColor = Color::SkyBlue;
-            this->btnSelectVertexColor->Click += gcnew EventHandler(this, &quiz::OnPickVertexColor);
+            Label^ lblRad = gcnew Label();
+            lblRad->Text = "Radius:";
+            lblRad->Location = Point(40, 15);
+            controlsPanel->Controls->Add(lblRad);
 
-            this->btnSelectEdgeColor = (gcnew System::Windows::Forms::Button());
-            this->btnSelectEdgeColor->Text = L"Edge Color";
-            this->btnSelectEdgeColor->BackColor = Color::Black;
-            this->btnSelectEdgeColor->ForeColor = Color::White;
-            this->btnSelectEdgeColor->Click += gcnew EventHandler(this, &quiz::OnPickEdgeColor);
+            Button^ btnEuler = gcnew Button();
+            btnEuler->Text = L"FIND EULER PATH";
+            btnEuler->Size = System::Drawing::Size(150, 40);
+            btnEuler->Location = Point(0, 50);
+            btnEuler->BackColor = Color::LightGreen;
+            btnEuler->FlatStyle = FlatStyle::Flat;
+            btnEuler->Font = (gcnew System::Drawing::Font(L"Segoe UI", 9, FontStyle::Bold));
+            btnEuler->Click += gcnew EventHandler(this, &quiz::OnEulerClick);
+            controlsPanel->Controls->Add(btnEuler);
 
-            this->btnConfirmSettings = (gcnew System::Windows::Forms::Button());
-            this->btnConfirmSettings->Text = L"START DRAWING";
-            this->btnConfirmSettings->Font = (gcnew System::Drawing::Font(L"Segoe UI", 12, FontStyle::Bold));
-            this->btnConfirmSettings->Size = System::Drawing::Size(200, 50);
-            this->btnConfirmSettings->Click += gcnew EventHandler(this, &quiz::OnStartDrawingClick);
+            Button^ btnClear = gcnew Button();
+            btnClear->Text = L"CLEAR";
+            btnClear->Size = System::Drawing::Size(150, 40);
+            btnClear->Location = Point(160, 50);
+            btnClear->BackColor = Color::LightSalmon;
+            btnClear->FlatStyle = FlatStyle::Flat;
+            btnClear->Click += gcnew EventHandler(this, &quiz::OnClearClick);
+            controlsPanel->Controls->Add(btnClear);
 
-            this->settingsPanel->Controls->Add(lblTitle);
-            this->settingsPanel->Controls->Add(lblRadiusText);
-            this->settingsPanel->Controls->Add(inputRadius);
-            this->settingsPanel->Controls->Add(btnSelectVertexColor);
-            this->settingsPanel->Controls->Add(btnSelectEdgeColor);
-            this->settingsPanel->Controls->Add(btnConfirmSettings);
-            this->settingsPanel->Layout += gcnew LayoutEventHandler(this, &quiz::ArrangeSettingsLayout);
-
-            this->ClientSize = System::Drawing::Size(800, 500);
-            this->MinimumSize = System::Drawing::Size(500, 450);
-            this->Controls->Add(this->settingsPanel);
-            this->Controls->Add(this->drawingCanvas);
-            this->Controls->Add(this->btnResetCanvas);
-
-            this->Text = L"Graph Designer Pro";
-            this->StartPosition = FormStartPosition::CenterScreen;
+            this->lblResult = gcnew Label();
+            //this->lblResult->Text = L"L-Click: Add | Ctrl+L-Click: Delete | R-Click: Link";
+            this->lblResult->Location = Point(330, 60);
+            this->lblResult->AutoSize = true;
+            this->lblResult->Font = (gcnew System::Drawing::Font(L"Segoe UI", 10, FontStyle::Bold));
+            controlsPanel->Controls->Add(this->lblResult);
         }
 
-        void ArrangeSettingsLayout(Object^ sender, LayoutEventArgs^ e)
+        int GetDegree(Vertex^ v) 
         {
-            int centerX = settingsPanel->Width / 2;
-            int centerY = settingsPanel->Height / 2;
-            lblTitle->Location = Point(centerX - lblTitle->Width / 2, centerY - 150);
-            lblRadiusText->Location = Point(centerX - 90, centerY - 60);
-            inputRadius->Location = Point(centerX + 30, centerY - 62);
-            btnSelectVertexColor->Size = System::Drawing::Size(160, 35);
-            btnSelectVertexColor->Location = Point(centerX - 80, centerY - 10);
-            btnSelectEdgeColor->Size = System::Drawing::Size(160, 35);
-            btnSelectEdgeColor->Location = Point(centerX - 80, centerY + 35);
-            btnConfirmSettings->Location = Point(centerX - 100, centerY + 100);
+            int deg = 0;
+            for (int i = 0; i < edgeList->Count; i++) 
+            {
+                if (edgeList[i]->StartVertex == v || edgeList[i]->EndVertex == v) 
+                    deg++;
+            }
+            return deg;
+        }
+
+        void OnEulerClick(Object^ sender, EventArgs^ e) 
+        {
+            if (vertexList->Count == 0 || edgeList->Count == 0) return;
+
+            List<Vertex^>^ oddVertices = gcnew List<Vertex^>();
+            for (int i = 0; i < vertexList->Count; i++) 
+            {
+                if (GetDegree(vertexList[i]) % 2 != 0) 
+                    oddVertices->Add(vertexList[i]);
+            }
+
+            if (oddVertices->Count != 0 && oddVertices->Count != 2) 
+            {
+                lblResult->ForeColor = Color::Red;
+                lblResult->Text = "No Euler path!";
+                return;
+            }
+
+            
+            List<Edge^>^ tempEdges = gcnew List<Edge^>(edgeList);
+            Stack<Vertex^>^ st = gcnew Stack<Vertex^>();
+            List<int>^ path = gcnew List<int>();
+            Vertex^ current;
+
+            if (oddVertices->Count == 2) 
+            {
+                current = oddVertices[0];
+            }
+            else 
+            {
+                current = vertexList[0];
+            }
+
+            st->Push(current);
+
+            while (st->Count > 0) 
+            {
+                Vertex^ v = st->Peek();
+                Edge^ foundEdge = nullptr;
+                int edgeIdx = -1;
+
+                for (int i = 0; i < tempEdges->Count && foundEdge == nullptr; i++) 
+                {
+                    if (tempEdges[i]->StartVertex == v) 
+                    {
+                        foundEdge = tempEdges[i];
+                        edgeIdx = i;
+                    }
+                    else if (!isDirected && tempEdges[i]->EndVertex == v) 
+                    {
+                        foundEdge = tempEdges[i];
+                        edgeIdx = i;
+                    }
+                }
+
+                if (foundEdge != nullptr) 
+                {
+                    Vertex^ nextV;
+
+                    if (foundEdge->StartVertex == v) 
+                    {
+                        nextV = foundEdge->EndVertex;
+                    }
+                    else 
+                    {
+                        nextV = foundEdge->StartVertex;
+                    }
+
+                    tempEdges->RemoveAt(edgeIdx);
+                    st->Push(nextV);
+                }
+                else 
+                {
+                    path->Add(vertexList->IndexOf(st->Pop()) + 1);
+                }
+            }
+
+            path->Reverse();
+            lblResult->ForeColor = Color::DarkGreen;
+            lblResult->Text = "Path: " + String::Join(" -> ", path);
+        }
+
+        void OnClearClick(Object^ sender, EventArgs^ e) 
+        {
+            vertexList->Clear(); 
+            edgeList->Clear(); 
+            selectedVertex = nullptr;
+            lblResult->ForeColor = Color::Black; 
+            lblResult->Text = "Canvas cleared.";
+            drawingCanvas->Invalidate();
         }
 
         void OnPickVertexColor(Object^ sender, EventArgs^ e) 
         {
-            ColorDialog^ dialog = gcnew ColorDialog();
-            if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
+            ColorDialog^ cd = gcnew ColorDialog();
+            if (cd->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
             {
-                globalVertexColor = dialog->Color;
-                btnSelectVertexColor->BackColor = dialog->Color;
+                globalVertexColor = cd->Color;
+                drawingCanvas->Invalidate();
             }
         }
 
         void OnPickEdgeColor(Object^ sender, EventArgs^ e) 
         {
-            ColorDialog^ dialog = gcnew ColorDialog();
-            if (dialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
+            ColorDialog^ cd = gcnew ColorDialog();
+            if (cd->ShowDialog() == System::Windows::Forms::DialogResult::OK) 
             {
-                globalEdgeColor = dialog->Color;
-                btnSelectEdgeColor->BackColor = dialog->Color;
+                globalEdgeColor = cd->Color;
+                drawingCanvas->Invalidate();
             }
         }
 
-        void OnStartDrawingClick(Object^ sender, EventArgs^ e)
+        void OnCanvasMouseDown(Object^ sender, MouseEventArgs^ e) 
         {
-            globalVertexRadius = (int)inputRadius->Value;
-            this->settingsPanel->Visible = false;
-        }
-
-        void OnCanvasMouseDown(Object^ sender, MouseEventArgs^ e)
-        {
-            Vertex^ targetVertex = nullptr;
-            bool isSpaceOccupied = false;
-            double safetyMargin = 50.0;
-
-            for (int i = 0; i < vertexList->Count; i++)
+            Vertex^ target = nullptr;
+            int targetIdx = -1;
+            for (int i = 0; i < vertexList->Count && target == nullptr; i++) 
             {
-                Vertex^ v = vertexList[i];
-                double distance = Math::Sqrt(Math::Pow(v->Position.X - e->X, 2) + Math::Pow(v->Position.Y - e->Y, 2));
-
-                if (distance < globalVertexRadius + 5)
-                {
-                    targetVertex = v;
-                    break;
+                double dist = Math::Sqrt(Math::Pow(vertexList[i]->Position.X - e->X, 2) + Math::Pow(vertexList[i]->Position.Y - e->Y, 2));
+                if (dist < globalVertexRadius + 5) 
+                { 
+                    target = vertexList[i];
+                    targetIdx = i; 
                 }
-                if (distance < safetyMargin) isSpaceOccupied = true;
             }
 
-            if (e->Button == System::Windows::Forms::MouseButtons::Right)
+            if (e->Button == System::Windows::Forms::MouseButtons::Left && Control::ModifierKeys == Keys::Control) 
             {
-                if (targetVertex != nullptr)
+                if (target != nullptr) 
                 {
-                    for (int i = edgeList->Count - 1; i >= 0; i--)
+                    for (int i = edgeList->Count - 1; i >= 0; i--) 
                     {
-                        if (edgeList[i]->StartVertex == targetVertex || edgeList[i]->EndVertex == targetVertex)
-                        {
+                        if (edgeList[i]->StartVertex == target || edgeList[i]->EndVertex == target) 
                             edgeList->RemoveAt(i);
+                    }
+                    vertexList->RemoveAt(targetIdx);
+                }
+                else 
+                {
+                    bool removed = false;
+                    for (int i = edgeList->Count - 1; i >= 0 && !removed; i--) {
+
+                        Point mid((edgeList[i]->StartVertex->Position.X + edgeList[i]->EndVertex->Position.X) / 2, (edgeList[i]->StartVertex->Position.Y + edgeList[i]->EndVertex->Position.Y) / 2);
+                        if (Math::Sqrt(Math::Pow(mid.X - e->X, 2) + Math::Pow(mid.Y - e->Y, 2)) < 15) 
+                        { 
+                            edgeList->RemoveAt(i); 
+                            removed = true;
                         }
                     }
-                    vertexList->Remove(targetVertex);
-                    if (selectedVertex == targetVertex) selectedVertex = nullptr;
                 }
             }
-            else if (e->Button == System::Windows::Forms::MouseButtons::Left)
+            else if (e->Button == System::Windows::Forms::MouseButtons::Left) 
             {
-                if (targetVertex == nullptr)
-                {
-                    if (!isSpaceOccupied)
-                    {
-                        vertexList->Add(gcnew Vertex(e->Location));
-                        selectedVertex = nullptr;
-                    }
+                if (target != nullptr) 
+                { 
+                    draggedVertex = target; 
+                    isDragging = true; 
+                    selectedVertex = target; 
                 }
-                else
-                {
-                    if (selectedVertex == nullptr) selectedVertex = targetVertex;
-                    else if (selectedVertex != targetVertex)
-                    {
-                        edgeList->Add(gcnew Edge(selectedVertex, targetVertex));
-                        selectedVertex = nullptr;
-                    }
-                    else selectedVertex = nullptr;
+                else 
+                { 
+                    vertexList->Add(gcnew Vertex(e->Location)); 
                 }
+            }
+            else if (e->Button == System::Windows::Forms::MouseButtons::Right && target != nullptr) 
+            {
+                if (selectedVertex != nullptr && selectedVertex != target) 
+                {
+                    edgeList->Add(gcnew Edge(selectedVertex, target, 1));
+                    selectedVertex = nullptr;
+                }
+                else selectedVertex = target;
             }
             drawingCanvas->Invalidate();
         }
 
-        void OnCanvasPaint(Object^ sender, PaintEventArgs^ e)
+        void OnCanvasPaint(Object^ sender, PaintEventArgs^ e) 
         {
-            Graphics^ graphics = e->Graphics;
-            graphics->SmoothingMode = System::Drawing::Drawing2D::SmoothingMode::AntiAlias;
+            Graphics^ g = e->Graphics;
+            g->SmoothingMode = SmoothingMode::AntiAlias;
+            Pen^ p = gcnew Pen(globalEdgeColor, 2);
 
-            Pen^ linePen = gcnew Pen(globalEdgeColor, 2);
-            for (int i = 0; i < edgeList->Count; i++)
+            for (int i = 0; i < edgeList->Count; i++) 
             {
-                graphics->DrawLine(linePen, edgeList[i]->StartVertex->Position, edgeList[i]->EndVertex->Position);
+                Point pS = edgeList[i]->StartVertex->Position;
+                Point pE = edgeList[i]->EndVertex->Position;
+                double dx = pE.X - pS.X;
+                double dy = pE.Y - pS.Y;
+                double len = Math::Sqrt(dx * dx + dy * dy);
+                if (len > 0) 
+                {
+                    Point arrowT = Point(pE.X - (int)((dx / len) * globalVertexRadius), pE.Y - (int)((dy / len) * globalVertexRadius));
+                    if (isDirected) 
+                        p->CustomEndCap = gcnew AdjustableArrowCap(5, 5, true);
+                    else p->EndCap = LineCap::Flat;
+                    g->DrawLine(p, pS, arrowT);
+                }
             }
 
-            for (int i = 0; i < vertexList->Count; i++)
+            for (int i = 0; i < vertexList->Count; i++) 
             {
-                Vertex^ currentVertex = vertexList[i];
-                Brush^ fillBrush = (currentVertex == selectedVertex) ? Brushes::Red : gcnew SolidBrush(globalVertexColor);
+                int r = globalVertexRadius;
+                Rectangle rect(vertexList[i]->Position.X - r, vertexList[i]->Position.Y - r, r * 2, r * 2);
+                Brush^ b;
+                if (vertexList[i] == selectedVertex) 
+                {
+                    b = Brushes::Orange;
+                }
+                else 
+                {
+                    b = gcnew SolidBrush(globalVertexColor);
+                }
 
-                int diameter = globalVertexRadius * 2;
-                Rectangle drawRect(currentVertex->Position.X - globalVertexRadius, currentVertex->Position.Y - globalVertexRadius, diameter, diameter);
-
-                graphics->FillEllipse(fillBrush, drawRect);
-                graphics->DrawEllipse(Pens::Black, drawRect);
-
-                String^ label = (i + 1).ToString();
-                System::Drawing::Font^ textFont = gcnew System::Drawing::Font("Segoe UI", (float)(globalVertexRadius * 0.7 + 3), FontStyle::Bold);
-                SizeF textSize = graphics->MeasureString(label, textFont);
-                graphics->DrawString(label, textFont, Brushes::Black, currentVertex->Position.X - textSize.Width / 2, currentVertex->Position.Y - textSize.Height / 2);
+                g->FillEllipse(b, rect);                
+                g->DrawEllipse(Pens::Black, rect);
+                String^ name = (i + 1).ToString();
+                SizeF sz = g->MeasureString(name, this->Font);
+                g->DrawString(name, this->Font, Brushes::Black, vertexList[i]->Position.X - sz.Width / 2, vertexList[i]->Position.Y - sz.Height / 2);
             }
         }
 
-        void OnResetClick(Object^ sender, EventArgs^ e)
+        void OnCanvasMouseMove(Object^ sender, MouseEventArgs^ e) 
         {
-            vertexList->Clear();
-            edgeList->Clear();
-            selectedVertex = nullptr;
+            if (isDragging && draggedVertex != nullptr) 
+            { 
+                draggedVertex->Position = e->Location; 
+                drawingCanvas->Invalidate();
+            }
+        }
+
+        void OnCanvasMouseUp(Object^ sender, MouseEventArgs^ e) 
+        { 
+            isDragging = false; 
+            draggedVertex = nullptr; 
+        }
+
+        void OnToggleSettings(Object^ sender, EventArgs^ e) 
+        {
+            isDirected = itemDirected->Checked;
+            isWeighted = itemWeighted->Checked;
+            globalVertexRadius = (int)inputRadius->Value;
             drawingCanvas->Invalidate();
         }
-
-    private:
-        System::ComponentModel::IContainer^ components;
     };
 }
